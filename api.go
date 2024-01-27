@@ -31,13 +31,13 @@ func makeHttpHandler(f apiFunc) http.HandlerFunc {
 
 type ApiServer struct {
 	listenAddr string
-	db         Storage
+	store      Storage
 }
 
-func NewApiServer(addr string) *ApiServer {
+func NewApiServer(addr string, store Storage) *ApiServer {
 	return &ApiServer{
 		listenAddr: addr,
-		db:         NewKvRepository(),
+		store:      store,
 	}
 }
 
@@ -45,7 +45,7 @@ func (s *ApiServer) Run() {
 	router := mux.NewRouter()
 	router.HandleFunc("/projects", makeHttpHandler(s.handleProjects))
 	project := NewProject("First Project", "Some description about first project", Pending)
-	s.db.CreateProject(*project)
+	s.store.CreateProject(*project)
 	log.Println("Server running and listening on port: ", s.listenAddr)
 	http.ListenAndServe(s.listenAddr, router)
 
@@ -68,7 +68,7 @@ func (s *ApiServer) handleProjects(w http.ResponseWriter, r *http.Request) error
 
 func (s *ApiServer) handleGetProjects(w http.ResponseWriter, r *http.Request) error {
 	log.Println("GET request ")
-	projects, _ := s.db.GetProjects()
+	projects, _ := s.store.GetProjects()
 	return WriteJson(w, http.StatusOK, projects)
 }
 func (s *ApiServer) handleCreateProject(w http.ResponseWriter, r *http.Request) error {
