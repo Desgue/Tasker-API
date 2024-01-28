@@ -31,21 +31,20 @@ func makeHttpHandler(f apiFunc) http.HandlerFunc {
 
 type ApiServer struct {
 	listenAddr string
-	store      Storage
+	service    IProjectService
 }
 
-func NewApiServer(addr string, store Storage) *ApiServer {
+func NewApiServer(addr string, svc IProjectService) *ApiServer {
 	return &ApiServer{
 		listenAddr: addr,
-		store:      store,
+		service:    svc,
 	}
 }
 
 func (s *ApiServer) Run() {
 	router := mux.NewRouter()
 	router.HandleFunc("/projects", makeHttpHandler(s.handleProjects))
-	project := NewProject("First Project", "Some description about first project", Pending)
-	s.store.CreateProject(*project)
+
 	log.Println("Server running and listening on port: ", s.listenAddr)
 	http.ListenAndServe(s.listenAddr, router)
 
@@ -68,11 +67,27 @@ func (s *ApiServer) handleProjects(w http.ResponseWriter, r *http.Request) error
 
 func (s *ApiServer) handleGetProjects(w http.ResponseWriter, r *http.Request) error {
 	log.Println("GET request ")
-	projects, _ := s.store.GetProjects()
+	projects, err := s.service.GetProjects()
+	if err != nil {
+		log.Println(err)
+		return WriteJson(w, http.StatusBadRequest, ApiErr{Err: err.Error()})
+	}
 	return WriteJson(w, http.StatusOK, projects)
 }
 func (s *ApiServer) handleCreateProject(w http.ResponseWriter, r *http.Request) error {
-	log.Println("POST resquest")
+	log.Println("POST resquest at http://localhost:3000/projects")
+
+	createProjectReq := new(CreateProjectRequest)
+	if err := json.NewDecoder(r.Body).Decode(createProjectReq); err != nil {
+		log.Panicln(err)
+		return err
+	}
+	_, err := s.service.CreateProject(createProjectReq)
+	if err != nil {
+		log.Println(err)
+		return WriteJson(w, http.StatusBadRequest, ApiErr{Err: err.Error()})
+	}
+
 	return nil
 }
 func (s *ApiServer) handleUpdateProject(w http.ResponseWriter, r *http.Request) error {

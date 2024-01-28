@@ -1,27 +1,38 @@
 package main
 
-import "github.com/google/uuid"
+import (
+	"time"
 
-const (
-	Pending status = iota
-	InProgress
-	Done
+	"github.com/google/uuid"
 )
 
-type status int
+const (
+	Pending    status = "Pending"
+	InProgress status = "InProgress"
+	Done       status = "Done"
+)
 
-type Project struct {
-	Id          string `json:"id"`
+type status string
+
+type CreateProjectRequest struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
-	Tasks       []Task `json:" tasks"`
-	Status      status `json:" status"`
+	Status      status `json:"status"`
+}
+
+type Project struct {
+	Id          string    `json:"id"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	Status      status    `json:" status"`
+	CreatedAt   time.Time `json:"createdAt"`
 }
 
 type Task struct {
-	id     string
-	title  string
-	status status
+	id        string
+	title     string
+	status    status
+	CreatedAt time.Time `json:"createdAt"`
 }
 
 func NewProject(title, desc string, status status) *Project {
@@ -30,8 +41,8 @@ func NewProject(title, desc string, status status) *Project {
 		Id:          uuid.NewString(),
 		Title:       title,
 		Description: desc,
-		Tasks:       []Task{},
 		Status:      status,
+		CreatedAt:   time.Now().UTC(),
 	}
 }
 func NewTask(title string, status status) *Task {
