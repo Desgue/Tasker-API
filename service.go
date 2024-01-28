@@ -6,6 +6,8 @@ type IProjectService interface {
 	GetProjects() ([]Project, error)
 	CreateProject(*CreateProjectRequest) (*CreateProjectRequest, error)
 	GetProjectById(string) (Project, error)
+	UpdateProject(string, *CreateProjectRequest) error
+	DeleteProject(string) error
 }
 
 type ProjectService struct {
@@ -52,4 +54,18 @@ func (s *ProjectService) CreateProject(r *CreateProjectRequest) (*CreateProjectR
 		return &CreateProjectRequest{}, err
 	}
 	return r, nil
+}
+
+func (s *ProjectService) UpdateProject(id string, r *CreateProjectRequest) error {
+	if err := s.store.UpdateProject(id, r); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *ProjectService) DeleteProject(id string) error {
+	if err := s.store.DeleteProject(id); err != nil {
+		return err
+	}
+	return nil
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -11,20 +12,23 @@ import (
 func WriteJson(w http.ResponseWriter, status int, v any) error {
 	w.WriteHeader(status)
 	w.Header().Add("Content-Type", "application/json")
+	w.Header().Add("Access-Control-Allow-Origin", "*")
 	return json.NewEncoder(w).Encode(v)
 }
 
 type apiFunc func(http.ResponseWriter, *http.Request) error
 
-type ApiErr struct {
-	Err string `json:"err"`
+type ApiLog struct {
+	Err        string `json:"err"`
+	StatusCode int    `json:"statusCode"`
+	Msg        string `json:"msg"`
 }
 
 func makeHttpHandler(f apiFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := f(w, r)
 		if err != nil {
-			WriteJson(w, http.StatusBadRequest, ApiErr{Err: err.Error()})
+			WriteJson(w, http.StatusBadRequest, ApiLog{Err: err.Error(), StatusCode: http.StatusBadRequest})
 		}
 	}
 }
@@ -57,7 +61,7 @@ func (s *ApiServer) handleProjects(w http.ResponseWriter, r *http.Request) error
 	case "POST":
 		return s.handleCreateProject(w, r)
 	default:
-		return WriteJson(w, http.StatusBadRequest, ApiErr{Err: "Method not allowed"})
+		return WriteJson(w, http.StatusBadRequest, ApiLog{Err: "Method not allowed"})
 	}
 
 }
@@ -71,7 +75,7 @@ func (s *ApiServer) handleProject(w http.ResponseWriter, r *http.Request) error 
 	case "DELETE":
 		return s.handleDeleteProject(w, r)
 	default:
-		return WriteJson(w, http.StatusBadRequest, ApiErr{Err: "Method not allowed"})
+		return WriteJson(w, http.StatusBadRequest, ApiLog{Err: "Method not allowed"})
 	}
 
 }
@@ -81,18 +85,18 @@ func (s *ApiServer) handleGetProjects(w http.ResponseWriter, r *http.Request) er
 	projects, err := s.service.GetProjects()
 	if err != nil {
 		log.Println(err)
-		return WriteJson(w, http.StatusBadRequest, ApiErr{Err: err.Error()})
+		return WriteJson(w, http.StatusBadRequest, ApiLog{Err: err.Error(), StatusCode: http.StatusBadRequest})
 	}
 	return WriteJson(w, http.StatusOK, projects)
 }
 
 func (s *ApiServer) handleGetProjectById(w http.ResponseWriter, r *http.Request) error {
-	log.Println("GET request ")
 	id := mux.Vars(r)["id"]
+	log.Printf("GET request at http://localhost:3000/projects/%s", id)
 	project, err := s.service.GetProjectById(id)
 	if err != nil {
 		log.Println(err)
-		return WriteJson(w, http.StatusBadRequest, ApiErr{Err: err.Error()})
+		return WriteJson(w, http.StatusBadRequest, ApiLog{Err: err.Error(), StatusCode: http.StatusBadRequest})
 	}
 	return WriteJson(w, http.StatusOK, &project)
 }
@@ -108,17 +112,34 @@ func (s *ApiServer) handleCreateProject(w http.ResponseWriter, r *http.Request) 
 	_, err := s.service.CreateProject(createProjectReq)
 	if err != nil {
 		log.Println("Error from databade while creating project: ", err)
-		return WriteJson(w, http.StatusBadRequest, ApiErr{Err: err.Error()})
+		return WriteJson(w, http.StatusBadRequest, ApiLog{Err: err.Error(), StatusCode: http.StatusBadRequest})
 	}
 
-	return nil
+	return WriteJson(w, http.StatusOK, ApiLog{StatusCode: http.StatusOK, Msg: "Project created successfully"})
 }
 
 func (s *ApiServer) handleUpdateProject(w http.ResponseWriter, r *http.Request) error {
-	log.Println("PUT request")
-	return nil
+	id := mux.Vars(r)["id"]
+	log.Printf("PUT request at http://localhost:3000/projects/%s", id)
+	project := new(CreateProjectRequest)
+	if err := json.NewDecoder(r.Body).Decode(project); err != nil {
+		log.Panicln(err)
+	}
+	if err := s.service.UpdateProject(id, project); err != nil {
+		log.Println(err)
+		return WriteJson(w, http.StatusBadRequest, ApiLog{Err: err.Error(), StatusCode: http.StatusBadRequest})
+	}
+	return WriteJson(w, http.StatusOK, ApiLog{StatusCode: http.StatusOK, Msg: fmt.Sprintf("Project with id %s updated successfully", id)})
 }
 func (s *ApiServer) handleDeleteProject(w http.ResponseWriter, r *http.Request) error {
-	log.Println("DELETE request")
-	return nil
+	id := mux.Vars(r)["id"]
+	log.Printf("DELETE request at http://localhost:3000/projects/%s", id)
+
+	err := s.service.DeleteProject(id)
+	if err != nil {
+		log.Println(err)
+		return WriteJson(w, http.StatusBadRequest, ApiLog{Err: err.Error(), StatusCode: http.StatusBadRequest})
+	}
+
+	return WriteJson(w, http.StatusOK, ApiLog{StatusCode: http.StatusOK, Msg: fmt.Sprintf("Project with id %s deleted successfully", id)})
 }

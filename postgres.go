@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"log"
 
 	_ "github.com/lib/pq"
 )
@@ -15,7 +14,7 @@ const (
 	id SMALLINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 	title varchar(255),
 	description text,
-	status status,
+	status status DEFAULT 'Pending',
 	createdAt TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );`
 )
@@ -24,6 +23,8 @@ type Storage interface {
 	GetProjects() ([]Project, error)
 	GetProjectById(string) (Project, error)
 	CreateProject(*CreateProjectRequest) error
+	UpdateProject(string, *CreateProjectRequest) error
+	DeleteProject(string) error
 }
 
 type PostgresStore struct {
@@ -78,15 +79,16 @@ func (store *PostgresStore) GetProjects() ([]Project, error) {
 
 func (store *PostgresStore) GetProjectById(id string) (Project, error) {
 	rows, err := store.db.Query("SELECT * from Projects WHERE id=$1", id)
-	log.Println("Fetching project with id: ", id)
+
+	var project Project
 	for rows.Next() {
-		project := Project{}
+		project = Project{}
 		err = rows.Scan(&project.Id, &project.Title, &project.Description, &project.Status, &project.CreatedAt)
 		if err != nil {
 			return Project{}, err
 		}
 	}
-	return Project{}, nil
+	return project, nil
 }
 
 func (store *PostgresStore) CreateProject(p *CreateProjectRequest) error {
@@ -95,5 +97,21 @@ func (store *PostgresStore) CreateProject(p *CreateProjectRequest) error {
 		return err
 	}
 
+	return nil
+}
+
+func (store *PostgresStore) UpdateProject(id string, p *CreateProjectRequest) error {
+	_, err := store.db.Exec("UPDATE Projects SET title=$1, description=$2, status=$3 WHERE id=$4", p.Title, p.Description, p.Status, id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (store *PostgresStore) DeleteProject(id string) error {
+	_, err := store.db.Exec("DELETE FROM Projects WHERE id=$1", id)
+	if err != nil {
+		return err
+	}
 	return nil
 }
