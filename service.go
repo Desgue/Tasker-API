@@ -2,26 +2,26 @@ package main
 
 import "log"
 
-type IProjectService interface {
-	GetProjects() ([]Project, error)
-	CreateProject(*CreateProjectRequest) (*CreateProjectRequest, error)
-	GetProjectById(string) (Project, error)
-	UpdateProject(string, *CreateProjectRequest) error
-	DeleteProject(string) error
+type ITaskService interface {
+	GetTasks() ([]Task, error)
+	CreateTask(*CreateTaskRequest) (*CreateTaskRequest, error)
+	GetTaskById(string) (Task, error)
+	UpdateTask(string, *CreateTaskRequest) error
+	DeleteTask(string) error
 }
 
-type ProjectService struct {
+type TaskService struct {
 	store Storage
 }
 
-func NewProjectService(store Storage) *ProjectService {
-	return &ProjectService{
+func NewTaskService(store Storage) *TaskService {
+	return &TaskService{
 		store: store,
 	}
 }
 
-func (s *ProjectService) GetProjects() ([]Project, error) {
-	projects, err := s.store.GetProjects()
+func (s *TaskService) GetTasks() ([]Task, error) {
+	projects, err := s.store.GetTasks()
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -29,16 +29,16 @@ func (s *ProjectService) GetProjects() ([]Project, error) {
 	return projects, nil
 }
 
-func (s *ProjectService) GetProjectById(id string) (Project, error) {
-	project, err := s.store.GetProjectById(id)
+func (s *TaskService) GetTaskById(id string) (Task, error) {
+	project, err := s.store.GetTaskById(id)
 	if err != nil {
 		log.Println(err)
-		return Project{}, err
+		return Task{}, err
 	}
 	return project, nil
 }
 
-func (s *ProjectService) CreateProject(r *CreateProjectRequest) (*CreateProjectRequest, error) {
+func (s *TaskService) CreateTask(r *CreateTaskRequest) (*CreateTaskRequest, error) {
 	switch r.Status {
 	case "Pending":
 		r.Status = Pending
@@ -50,21 +50,21 @@ func (s *ProjectService) CreateProject(r *CreateProjectRequest) (*CreateProjectR
 		r.Status = Pending
 	}
 
-	if err := s.store.CreateProject(r); err != nil {
-		return &CreateProjectRequest{}, err
+	if err := s.store.CreateTask(r); err != nil {
+		return &CreateTaskRequest{}, err
 	}
 	return r, nil
 }
 
-func (s *ProjectService) UpdateProject(id string, r *CreateProjectRequest) error {
-	if err := s.store.UpdateProject(id, r); err != nil {
+func (s *TaskService) UpdateTask(id string, r *CreateTaskRequest) error {
+	if err := s.store.UpdateTask(id, r); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *ProjectService) DeleteProject(id string) error {
-	if err := s.store.DeleteProject(id); err != nil {
+func (s *TaskService) DeleteTask(id string) error {
+	if err := s.store.DeleteTask(id); err != nil {
 		return err
 	}
 	return nil

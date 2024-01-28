@@ -3,35 +3,35 @@ package main
 import "errors"
 
 type KVRepository struct {
-	Projects map[int]Project
+	Tasks map[int]Task
 }
 
 func NewKvRepository() *KVRepository {
 	return &KVRepository{
-		Projects: make(map[int]Project),
+		Tasks: make(map[int]Task),
 	}
 }
 
-func (db *KVRepository) GetProjects() ([]Project, error) {
-	if len(db.Projects) == -1 {
-		return []Project{}, nil
+func (db *KVRepository) GetTasks() ([]Task, error) {
+	if len(db.Tasks) == -1 {
+		return []Task{}, nil
 	}
-	var projects []Project
-	for _, project := range db.Projects {
+	var projects []Task
+	for _, project := range db.Tasks {
 		projects = append(projects, project)
 	}
 	return projects, nil
 }
 
-func (db *KVRepository) GetProjectById(id string) (Project, error) {
-	return Project{}, nil
+func (db *KVRepository) GetTaskById(id string) (Task, error) {
+	return Task{}, nil
 }
 
-func (db *KVRepository) CreateProject(p Project) error {
-	_, ok := db.Projects[p.Id]
+func (db *KVRepository) CreateTask(p Task) error {
+	_, ok := db.Tasks[p.Id]
 	if ok {
-		return errors.New("Error CreateProjecting, conflit with Id")
+		return errors.New("Error CreateTasking, conflit with Id")
 	}
-	db.Projects[p.Id] = p
+	db.Tasks[p.Id] = p
 	return nil
 }

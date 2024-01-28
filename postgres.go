@@ -8,9 +8,10 @@ import (
 )
 
 const (
-	createTypeEnumQuery     = `CREATE OR REPLACE TYPE  status as ENUM('Pending', 'InProgress', 'Done')`
-	createProjectTableQuery = `
-	CREATE TABLE IF NOT EXISTS Projects (
+	createTypeEnumQuery  = `CREATE TYPE status as ENUM('Pending', 'InProgress', 'Done')`
+	createTaskTableQuery = `
+	CREATE TYPE status as ENUM('Pending', 'InProgress', 'Done');
+	CREATE TABLE IF NOT EXISTS Tasks (
 	id SMALLINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 	title varchar(255),
 	description text,
@@ -20,11 +21,11 @@ const (
 )
 
 type Storage interface {
-	GetProjects() ([]Project, error)
-	GetProjectById(string) (Project, error)
-	CreateProject(*CreateProjectRequest) error
-	UpdateProject(string, *CreateProjectRequest) error
-	DeleteProject(string) error
+	GetTasks() ([]Task, error)
+	GetTaskById(string) (Task, error)
+	CreateTask(*CreateTaskRequest) error
+	UpdateTask(string, *CreateTaskRequest) error
+	DeleteTask(string) error
 }
 
 type PostgresStore struct {
@@ -47,52 +48,52 @@ func NewPostgresStore() (*PostgresStore, error) {
 }
 
 func (store *PostgresStore) Init() error {
-	return store.createProjectTable()
+	return store.createTaskTable()
 }
 
-func (store *PostgresStore) createProjectTable() error {
-	_, err := store.db.Exec(createProjectTableQuery)
+func (store *PostgresStore) createTaskTable() error {
+	_, err := store.db.Exec(createTaskTableQuery)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (store *PostgresStore) GetProjects() ([]Project, error) {
-	rows, err := store.db.Query("SELECT * from Projects")
+func (store *PostgresStore) GetTasks() ([]Task, error) {
+	rows, err := store.db.Query("SELECT * from Tasks")
 	if err != nil {
 		return nil, err
 	}
-	var projects []Project
+	var tasks []Task
 	for rows.Next() {
-		project := Project{}
-		err = rows.Scan(&project.Id, &project.Title, &project.Description, &project.Status, &project.CreatedAt)
+		task := Task{}
+		err = rows.Scan(&task.Id, &task.Title, &task.Description, &task.Status, &task.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
-		projects = append(projects, project)
+		tasks = append(tasks, task)
 
 	}
-	fmt.Println(projects)
-	return projects, nil
+	fmt.Println(tasks)
+	return tasks, nil
 }
 
-func (store *PostgresStore) GetProjectById(id string) (Project, error) {
-	rows, err := store.db.Query("SELECT * from Projects WHERE id=$1", id)
+func (store *PostgresStore) GetTaskById(id string) (Task, error) {
+	rows, err := store.db.Query("SELECT * from Tasks WHERE id=$1", id)
 
-	var project Project
+	var task Task
 	for rows.Next() {
-		project = Project{}
-		err = rows.Scan(&project.Id, &project.Title, &project.Description, &project.Status, &project.CreatedAt)
+		task = Task{}
+		err = rows.Scan(&task.Id, &task.Title, &task.Description, &task.Status, &task.CreatedAt)
 		if err != nil {
-			return Project{}, err
+			return Task{}, err
 		}
 	}
-	return project, nil
+	return task, nil
 }
 
-func (store *PostgresStore) CreateProject(p *CreateProjectRequest) error {
-	_, err := store.db.Exec("INSERT INTO Projects (title, description, status) VALUES($1, $2, $3)", p.Title, p.Description, p.Status)
+func (store *PostgresStore) CreateTask(p *CreateTaskRequest) error {
+	_, err := store.db.Exec("INSERT INTO Tasks (title, description, status) VALUES($1, $2, $3)", p.Title, p.Description, p.Status)
 	if err != nil {
 		return err
 	}
@@ -100,16 +101,16 @@ func (store *PostgresStore) CreateProject(p *CreateProjectRequest) error {
 	return nil
 }
 
-func (store *PostgresStore) UpdateProject(id string, p *CreateProjectRequest) error {
-	_, err := store.db.Exec("UPDATE Projects SET title=$1, description=$2, status=$3 WHERE id=$4", p.Title, p.Description, p.Status, id)
+func (store *PostgresStore) UpdateTask(id string, p *CreateTaskRequest) error {
+	_, err := store.db.Exec("UPDATE Tasks SET title=$1, description=$2, status=$3 WHERE id=$4", p.Title, p.Description, p.Status, id)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (store *PostgresStore) DeleteProject(id string) error {
-	_, err := store.db.Exec("DELETE FROM Projects WHERE id=$1", id)
+func (store *PostgresStore) DeleteTask(id string) error {
+	_, err := store.db.Exec("DELETE FROM Tasks WHERE id=$1", id)
 	if err != nil {
 		return err
 	}

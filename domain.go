@@ -2,8 +2,6 @@ package main
 
 import (
 	"time"
-
-	"github.com/google/uuid"
 )
 
 const (
@@ -14,13 +12,13 @@ const (
 
 type status string
 
-type CreateProjectRequest struct {
+type CreateTaskRequest struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
 	Status      status `json:"status"`
 }
 
-type Project struct {
+type Task struct {
 	Id          int       `json:"id"`
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
@@ -28,34 +26,20 @@ type Project struct {
 	CreatedAt   time.Time `json:"createdAt"`
 }
 
-type Task struct {
-	id        string
-	title     string
-	status    status
-	CreatedAt time.Time `json:"createdAt"`
-}
-
-func NewCreateProjectRequest(title, desc string, status status) *CreateProjectRequest {
-	return &CreateProjectRequest{
+func NewCreateTaskRequest(title, desc string, status status) *CreateTaskRequest {
+	return &CreateTaskRequest{
 		Title:       title,
 		Description: desc,
 		Status:      status,
 	}
 }
 
-func NewProject(title, desc string, status status, createdAt time.Time) *Project {
+func NewTask(title, desc string, status status, createdAt time.Time) *Task {
 
-	return &Project{
+	return &Task{
 		Title:       title,
 		Description: desc,
 		Status:      status,
 		CreatedAt:   createdAt,
-	}
-}
-func NewTask(title string, status status) *Task {
-	return &Task{
-		id:     uuid.NewString(),
-		title:  title,
-		status: status,
 	}
 }

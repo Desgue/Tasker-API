@@ -35,10 +35,10 @@ func makeHttpHandler(f apiFunc) http.HandlerFunc {
 
 type ApiServer struct {
 	listenAddr string
-	service    IProjectService
+	service    ITaskService
 }
 
-func NewApiServer(addr string, svc IProjectService) *ApiServer {
+func NewApiServer(addr string, svc ITaskService) *ApiServer {
 	return &ApiServer{
 		listenAddr: addr,
 		service:    svc,
@@ -47,99 +47,99 @@ func NewApiServer(addr string, svc IProjectService) *ApiServer {
 
 func (s *ApiServer) Run() {
 	router := mux.NewRouter()
-	router.HandleFunc("/projects", makeHttpHandler(s.handleProjects))
-	router.HandleFunc("/projects/{id}", makeHttpHandler(s.handleProject))
+	router.HandleFunc("/tasks", makeHttpHandler(s.handleTasks))
+	router.HandleFunc("/tasks/{id}", makeHttpHandler(s.handleTask))
 	log.Println("Server running and listening on port: ", s.listenAddr)
 	http.ListenAndServe(s.listenAddr, router)
 
 }
 
-func (s *ApiServer) handleProjects(w http.ResponseWriter, r *http.Request) error {
+func (s *ApiServer) handleTasks(w http.ResponseWriter, r *http.Request) error {
 	switch r.Method {
 	case "GET":
-		return s.handleGetProjects(w, r)
+		return s.handleGetTasks(w, r)
 	case "POST":
-		return s.handleCreateProject(w, r)
+		return s.handleCreateTask(w, r)
 	default:
 		return WriteJson(w, http.StatusBadRequest, ApiLog{Err: "Method not allowed"})
 	}
 
 }
 
-func (s *ApiServer) handleProject(w http.ResponseWriter, r *http.Request) error {
+func (s *ApiServer) handleTask(w http.ResponseWriter, r *http.Request) error {
 	switch r.Method {
 	case "GET":
-		return s.handleGetProjectById(w, r)
+		return s.handleGetTaskById(w, r)
 	case "PUT":
-		return s.handleUpdateProject(w, r)
+		return s.handleUpdateTask(w, r)
 	case "DELETE":
-		return s.handleDeleteProject(w, r)
+		return s.handleDeleteTask(w, r)
 	default:
 		return WriteJson(w, http.StatusBadRequest, ApiLog{Err: "Method not allowed"})
 	}
 
 }
 
-func (s *ApiServer) handleGetProjects(w http.ResponseWriter, r *http.Request) error {
+func (s *ApiServer) handleGetTasks(w http.ResponseWriter, r *http.Request) error {
 	log.Println("GET request ")
-	projects, err := s.service.GetProjects()
+	tasks, err := s.service.GetTasks()
 	if err != nil {
 		log.Println(err)
 		return WriteJson(w, http.StatusBadRequest, ApiLog{Err: err.Error(), StatusCode: http.StatusBadRequest})
 	}
-	return WriteJson(w, http.StatusOK, projects)
+	return WriteJson(w, http.StatusOK, tasks)
 }
 
-func (s *ApiServer) handleGetProjectById(w http.ResponseWriter, r *http.Request) error {
+func (s *ApiServer) handleGetTaskById(w http.ResponseWriter, r *http.Request) error {
 	id := mux.Vars(r)["id"]
-	log.Printf("GET request at http://localhost:3000/projects/%s", id)
-	project, err := s.service.GetProjectById(id)
+	log.Printf("GET request at http://localhost:3000/tasks/%s", id)
+	task, err := s.service.GetTaskById(id)
 	if err != nil {
 		log.Println(err)
 		return WriteJson(w, http.StatusBadRequest, ApiLog{Err: err.Error(), StatusCode: http.StatusBadRequest})
 	}
-	return WriteJson(w, http.StatusOK, &project)
+	return WriteJson(w, http.StatusOK, &task)
 }
 
-func (s *ApiServer) handleCreateProject(w http.ResponseWriter, r *http.Request) error {
-	log.Println("POST resquest at http://localhost:3000/projects")
+func (s *ApiServer) handleCreateTask(w http.ResponseWriter, r *http.Request) error {
+	log.Println("POST resquest at http://localhost:3000/tasks")
 
-	createProjectReq := new(CreateProjectRequest)
-	if err := json.NewDecoder(r.Body).Decode(createProjectReq); err != nil {
+	createTaskReq := new(CreateTaskRequest)
+	if err := json.NewDecoder(r.Body).Decode(createTaskReq); err != nil {
 		log.Panicln(err)
 		return err
 	}
-	_, err := s.service.CreateProject(createProjectReq)
+	_, err := s.service.CreateTask(createTaskReq)
 	if err != nil {
-		log.Println("Error from databade while creating project: ", err)
+		log.Println("Error from databade while creating task: ", err)
 		return WriteJson(w, http.StatusBadRequest, ApiLog{Err: err.Error(), StatusCode: http.StatusBadRequest})
 	}
 
-	return WriteJson(w, http.StatusOK, ApiLog{StatusCode: http.StatusOK, Msg: "Project created successfully"})
+	return WriteJson(w, http.StatusOK, ApiLog{StatusCode: http.StatusOK, Msg: "Task created successfully"})
 }
 
-func (s *ApiServer) handleUpdateProject(w http.ResponseWriter, r *http.Request) error {
+func (s *ApiServer) handleUpdateTask(w http.ResponseWriter, r *http.Request) error {
 	id := mux.Vars(r)["id"]
-	log.Printf("PUT request at http://localhost:3000/projects/%s", id)
-	project := new(CreateProjectRequest)
-	if err := json.NewDecoder(r.Body).Decode(project); err != nil {
+	log.Printf("PUT request at http://localhost:3000/tasks/%s", id)
+	task := new(CreateTaskRequest)
+	if err := json.NewDecoder(r.Body).Decode(task); err != nil {
 		log.Panicln(err)
 	}
-	if err := s.service.UpdateProject(id, project); err != nil {
+	if err := s.service.UpdateTask(id, task); err != nil {
 		log.Println(err)
 		return WriteJson(w, http.StatusBadRequest, ApiLog{Err: err.Error(), StatusCode: http.StatusBadRequest})
 	}
-	return WriteJson(w, http.StatusOK, ApiLog{StatusCode: http.StatusOK, Msg: fmt.Sprintf("Project with id %s updated successfully", id)})
+	return WriteJson(w, http.StatusOK, ApiLog{StatusCode: http.StatusOK, Msg: fmt.Sprintf("Task with id %s updated successfully", id)})
 }
-func (s *ApiServer) handleDeleteProject(w http.ResponseWriter, r *http.Request) error {
+func (s *ApiServer) handleDeleteTask(w http.ResponseWriter, r *http.Request) error {
 	id := mux.Vars(r)["id"]
-	log.Printf("DELETE request at http://localhost:3000/projects/%s", id)
+	log.Printf("DELETE request at http://localhost:3000/tasks/%s", id)
 
-	err := s.service.DeleteProject(id)
+	err := s.service.DeleteTask(id)
 	if err != nil {
 		log.Println(err)
 		return WriteJson(w, http.StatusBadRequest, ApiLog{Err: err.Error(), StatusCode: http.StatusBadRequest})
 	}
 
-	return WriteJson(w, http.StatusOK, ApiLog{StatusCode: http.StatusOK, Msg: fmt.Sprintf("Project with id %s deleted successfully", id)})
+	return WriteJson(w, http.StatusOK, ApiLog{StatusCode: http.StatusOK, Msg: fmt.Sprintf("Task with id %s deleted successfully", id)})
 }
