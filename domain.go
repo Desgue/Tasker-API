@@ -21,7 +21,7 @@ type CreateProjectRequest struct {
 }
 
 type Project struct {
-	Id          string    `json:"id"`
+	Id          int       `json:"id"`
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
 	Status      status    `json:" status"`
@@ -35,14 +35,21 @@ type Task struct {
 	CreatedAt time.Time `json:"createdAt"`
 }
 
-func NewProject(title, desc string, status status) *Project {
-
-	return &Project{
-		Id:          uuid.NewString(),
+func NewCreateProjectRequest(title, desc string, status status) *CreateProjectRequest {
+	return &CreateProjectRequest{
 		Title:       title,
 		Description: desc,
 		Status:      status,
-		CreatedAt:   time.Now().UTC(),
+	}
+}
+
+func NewProject(title, desc string, status status, createdAt time.Time) *Project {
+
+	return &Project{
+		Title:       title,
+		Description: desc,
+		Status:      status,
+		CreatedAt:   createdAt,
 	}
 }
 func NewTask(title string, status status) *Task {

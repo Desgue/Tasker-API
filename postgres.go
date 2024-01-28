@@ -3,27 +3,27 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"log"
 
 	_ "github.com/lib/pq"
 )
 
 const (
-	createTypeEnumQuery     = `CREATE TYPE  status as ENUM('Pending', 'InProgress', 'Done')`
+	createTypeEnumQuery     = `CREATE OR REPLACE TYPE  status as ENUM('Pending', 'InProgress', 'Done')`
 	createProjectTableQuery = `
 	CREATE TABLE IF NOT EXISTS Projects (
-	id varchar(255) NOT NULL PRIMARY KEY,
+	id SMALLINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 	title varchar(255),
 	description text,
 	status status,
-	createdAt timestamp
-
+	createdAt TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );`
 )
 
 type Storage interface {
 	GetProjects() ([]Project, error)
 	GetProjectById(string) (Project, error)
-	CreateProject(*Project) error
+	CreateProject(*CreateProjectRequest) error
 }
 
 type PostgresStore struct {
@@ -77,11 +77,20 @@ func (store *PostgresStore) GetProjects() ([]Project, error) {
 }
 
 func (store *PostgresStore) GetProjectById(id string) (Project, error) {
+	rows, err := store.db.Query("SELECT * from Projects WHERE id=$1", id)
+	log.Println("Fetching project with id: ", id)
+	for rows.Next() {
+		project := Project{}
+		err = rows.Scan(&project.Id, &project.Title, &project.Description, &project.Status, &project.CreatedAt)
+		if err != nil {
+			return Project{}, err
+		}
+	}
 	return Project{}, nil
 }
 
-func (store *PostgresStore) CreateProject(p *Project) error {
-	_, err := store.db.Exec("INSERT INTO Projects VALUES($1, $2, $3, $4, $5)", p.Id, p.Title, p.Description, p.Status, p.CreatedAt)
+func (store *PostgresStore) CreateProject(p *CreateProjectRequest) error {
+	_, err := store.db.Exec("INSERT INTO Projects (title, description, status) VALUES($1, $2, $3)", p.Title, p.Description, p.Status)
 	if err != nil {
 		return err
 	}

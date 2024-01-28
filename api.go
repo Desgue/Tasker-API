@@ -44,7 +44,7 @@ func NewApiServer(addr string, svc IProjectService) *ApiServer {
 func (s *ApiServer) Run() {
 	router := mux.NewRouter()
 	router.HandleFunc("/projects", makeHttpHandler(s.handleProjects))
-
+	router.HandleFunc("/projects/{id}", makeHttpHandler(s.handleProject))
 	log.Println("Server running and listening on port: ", s.listenAddr)
 	http.ListenAndServe(s.listenAddr, router)
 
@@ -56,13 +56,24 @@ func (s *ApiServer) handleProjects(w http.ResponseWriter, r *http.Request) error
 		return s.handleGetProjects(w, r)
 	case "POST":
 		return s.handleCreateProject(w, r)
+	default:
+		return WriteJson(w, http.StatusBadRequest, ApiErr{Err: "Method not allowed"})
+	}
+
+}
+
+func (s *ApiServer) handleProject(w http.ResponseWriter, r *http.Request) error {
+	switch r.Method {
+	case "GET":
+		return s.handleGetProjectById(w, r)
 	case "PUT":
 		return s.handleUpdateProject(w, r)
 	case "DELETE":
 		return s.handleDeleteProject(w, r)
+	default:
+		return WriteJson(w, http.StatusBadRequest, ApiErr{Err: "Method not allowed"})
 	}
 
-	return nil
 }
 
 func (s *ApiServer) handleGetProjects(w http.ResponseWriter, r *http.Request) error {
@@ -74,6 +85,18 @@ func (s *ApiServer) handleGetProjects(w http.ResponseWriter, r *http.Request) er
 	}
 	return WriteJson(w, http.StatusOK, projects)
 }
+
+func (s *ApiServer) handleGetProjectById(w http.ResponseWriter, r *http.Request) error {
+	log.Println("GET request ")
+	id := mux.Vars(r)["id"]
+	project, err := s.service.GetProjectById(id)
+	if err != nil {
+		log.Println(err)
+		return WriteJson(w, http.StatusBadRequest, ApiErr{Err: err.Error()})
+	}
+	return WriteJson(w, http.StatusOK, &project)
+}
+
 func (s *ApiServer) handleCreateProject(w http.ResponseWriter, r *http.Request) error {
 	log.Println("POST resquest at http://localhost:3000/projects")
 
@@ -84,12 +107,13 @@ func (s *ApiServer) handleCreateProject(w http.ResponseWriter, r *http.Request) 
 	}
 	_, err := s.service.CreateProject(createProjectReq)
 	if err != nil {
-		log.Println(err)
+		log.Println("Error from databade while creating project: ", err)
 		return WriteJson(w, http.StatusBadRequest, ApiErr{Err: err.Error()})
 	}
 
 	return nil
 }
+
 func (s *ApiServer) handleUpdateProject(w http.ResponseWriter, r *http.Request) error {
 	log.Println("PUT request")
 	return nil

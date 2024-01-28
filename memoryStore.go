@@ -3,12 +3,12 @@ package main
 import "errors"
 
 type KVRepository struct {
-	Projects map[string]Project
+	Projects map[int]Project
 }
 
 func NewKvRepository() *KVRepository {
 	return &KVRepository{
-		Projects: make(map[string]Project),
+		Projects: make(map[int]Project),
 	}
 }
 
