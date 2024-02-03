@@ -5,7 +5,7 @@ import (
 )
 
 func main() {
-	store, err := NewPostgresStore()
+	store, err := NewPostgresTaskStore()
 	service := NewTaskService(store)
 	if err != nil {
 		log.Fatalln(err)

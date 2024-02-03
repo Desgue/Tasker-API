@@ -3,12 +3,13 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"log"
 
 	_ "github.com/lib/pq"
 )
 
 const (
-	createTypeEnumQuery  = `CREATE TYPE status as ENUM('Pending', 'InProgress', 'Done')`
+	createTypeEnumQuery  = `CREATE TYPE status as ENUM('Pending', 'InProgress', 'Done');`
 	createTaskTableQuery = `
 	CREATE TABLE IF NOT EXISTS Tasks (
 	id SMALLINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
@@ -17,9 +18,18 @@ const (
 	status status DEFAULT 'Pending',
 	createdAt TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );`
+	createPriorityEnumQuery = `CREATE TYPE priority as ENUM('High', 'Medium', 'Low');`
+	createProjectTableQuery = `
+	CREATE TABLE IF NOT EXISTS Projects (
+	id SMALLINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	title varchar(255),
+	description text,
+	priority priority DEFAULT 'Low',
+	createdAt TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);`
 )
 
-type Storage interface {
+type TaskStorage interface {
 	GetTasks() ([]Task, error)
 	GetTaskById(string) (Task, error)
 	CreateTask(*CreateTaskRequest) error
@@ -27,11 +37,11 @@ type Storage interface {
 	DeleteTask(string) error
 }
 
-type PostgresStore struct {
+type PostgresTaskStore struct {
 	db *sql.DB
 }
 
-func NewPostgresStore() (*PostgresStore, error) {
+func NewPostgresTaskStore() (*PostgresTaskStore, error) {
 	connStr := "user=ttracker dbname=ttracker password=ttracker sslmode=disable"
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
@@ -41,16 +51,16 @@ func NewPostgresStore() (*PostgresStore, error) {
 	if err = db.Ping(); err != nil {
 		return nil, err
 	}
-	return &PostgresStore{
+	return &PostgresTaskStore{
 		db: db,
 	}, nil
 }
 
-func (store *PostgresStore) Init() error {
+func (store *PostgresTaskStore) Init() error {
 	return store.createTaskTable()
 }
 
-func (store *PostgresStore) createTaskTable() error {
+func (store *PostgresTaskStore) createTaskTable() error {
 	_, err := store.db.Exec(createTaskTableQuery)
 	if err != nil {
 		return err
@@ -58,7 +68,7 @@ func (store *PostgresStore) createTaskTable() error {
 	return nil
 }
 
-func (store *PostgresStore) GetTasks() ([]Task, error) {
+func (store *PostgresTaskStore) GetTasks() ([]Task, error) {
 	rows, err := store.db.Query("SELECT * from Tasks")
 	if err != nil {
 		return nil, err
@@ -77,7 +87,7 @@ func (store *PostgresStore) GetTasks() ([]Task, error) {
 	return tasks, nil
 }
 
-func (store *PostgresStore) GetTaskById(id string) (Task, error) {
+func (store *PostgresTaskStore) GetTaskById(id string) (Task, error) {
 	rows, err := store.db.Query("SELECT * from Tasks WHERE id=$1", id)
 
 	var task Task
@@ -91,7 +101,7 @@ func (store *PostgresStore) GetTaskById(id string) (Task, error) {
 	return task, nil
 }
 
-func (store *PostgresStore) CreateTask(p *CreateTaskRequest) error {
+func (store *PostgresTaskStore) CreateTask(p *CreateTaskRequest) error {
 	_, err := store.db.Exec("INSERT INTO Tasks (title, description, status) VALUES($1, $2, $3)", p.Title, p.Description, p.Status)
 	if err != nil {
 		return err
@@ -100,7 +110,7 @@ func (store *PostgresStore) CreateTask(p *CreateTaskRequest) error {
 	return nil
 }
 
-func (store *PostgresStore) UpdateTask(id string, p *CreateTaskRequest) error {
+func (store *PostgresTaskStore) UpdateTask(id string, p *CreateTaskRequest) error {
 	_, err := store.db.Exec("UPDATE Tasks SET title=$1, description=$2, status=$3 WHERE id=$4", p.Title, p.Description, p.Status, id)
 	if err != nil {
 		return err
@@ -108,8 +118,103 @@ func (store *PostgresStore) UpdateTask(id string, p *CreateTaskRequest) error {
 	return nil
 }
 
-func (store *PostgresStore) DeleteTask(id string) error {
+func (store *PostgresTaskStore) DeleteTask(id string) error {
 	_, err := store.db.Exec("DELETE FROM Tasks WHERE id=$1", id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// This is the interface that the service will use to interact with the database
+type ProjectStorage interface {
+	GetProjects() ([]Project, error)
+	GetProjectById(string) (Project, error)
+	CreateProject(*CreateProjectRequest) error
+	UpdateProject(string, *CreateProjectRequest) error
+	DeleteProject(string) error
+}
+
+type PostgresProjectStore struct {
+	db *sql.DB
+}
+
+func NewPostgresProjectStore() (*PostgresProjectStore, error) {
+	connStr := "user=ttracker dbname=ttracker password=ttracker sslmode=disable"
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		return nil, err
+	}
+	if err = db.Ping(); err != nil {
+		return nil, err
+	}
+	return &PostgresProjectStore{
+		db: db,
+	}, nil
+}
+func (store *PostgresProjectStore) createProjectTable() error {
+	_, err := store.db.Exec(createProjectTableQuery)
+	if err != nil {
+		return err
+	}
+	_, err = store.db.Exec(createPriorityEnumQuery)
+	if err != nil {
+		log.Println(err)
+		log.Println("Error creating priority enum continuing with the program...")
+	}
+	return nil
+}
+
+func (store *PostgresProjectStore) Init() error {
+	return store.createProjectTable()
+}
+
+func (store *PostgresProjectStore) GetProjects() ([]Project, error) {
+	rows, err := store.db.Query("SELECT * from Projects")
+	if err != nil {
+		return nil, err
+	}
+	var projects []Project
+	for rows.Next() {
+		project := Project{}
+		err = rows.Scan(&project.Id, &project.Title, &project.Description, &project.Priority, &project.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
+		projects = append(projects, project)
+
+	}
+	return projects, nil
+}
+
+func (store *PostgresProjectStore) GetProjectById(id string) (Project, error) {
+	rows, err := store.db.Query("SELECT * from Projects WHERE id=$1", id)
+	var project Project
+	err = rows.Scan(&project.Id, &project.Title, &project.Description, &project.Priority, &project.CreatedAt)
+	if err != nil {
+		return Project{}, err
+	}
+	return project, nil
+}
+
+func (store *PostgresProjectStore) CreateProject(p *CreateProjectRequest) error {
+	_, err := store.db.Exec("INSERT INTO Projects (title, description, priority) VALUES($1, $2, $3)", p.Title, p.Description, p.Priority)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (store *PostgresProjectStore) UpdateProject(id string, p *CreateProjectRequest) error {
+	_, err := store.db.Exec("UPDATE Projects SET title=$1, description=$2, priority=$3 WHERE id=$4", p.Title, p.Description, p.Priority, id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (store *PostgresProjectStore) DeleteProject(id string) error {
+	_, err := store.db.Exec("DELETE FROM Projects WHERE id=$1", id)
 	if err != nil {
 		return err
 	}
