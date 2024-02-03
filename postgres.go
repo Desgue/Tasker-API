@@ -9,14 +9,15 @@ import (
 )
 
 const (
-	createTypeEnumQuery  = `CREATE TYPE status as ENUM('Pending', 'InProgress', 'Done');`
-	createTaskTableQuery = `
+	createStatusEnumQuery = `CREATE TYPE status as ENUM('Pending', 'InProgress', 'Done');`
+	createTaskTableQuery  = `
 	CREATE TABLE IF NOT EXISTS Tasks (
 	id SMALLINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 	title varchar(255),
 	description text,
 	status status DEFAULT 'Pending',
-	createdAt TIMESTAMPTZ NOT NULL DEFAULT NOW()
+	createdAt TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+	projectId SMALLINT NOT NULL REFERENCES Projects(id) 
 );`
 	createPriorityEnumQuery = `CREATE TYPE priority as ENUM('High', 'Medium', 'Low');`
 	createProjectTableQuery = `
@@ -30,7 +31,7 @@ const (
 )
 
 type TaskStorage interface {
-	GetTasks() ([]Task, error)
+	GetTasks(projectId int) ([]Task, error)
 	GetTaskById(string) (Task, error)
 	CreateTask(*CreateTaskRequest) error
 	UpdateTask(string, *CreateTaskRequest) error
@@ -61,22 +62,29 @@ func (store *PostgresTaskStore) Init() error {
 }
 
 func (store *PostgresTaskStore) createTaskTable() error {
-	_, err := store.db.Exec(createTaskTableQuery)
+	_, err := store.db.Exec(createStatusEnumQuery)
+	if err != nil {
+		log.Println(err)
+		log.Println("Error creating status enum continuing with the program...")
+	}
+	_, err = store.db.Exec(createTaskTableQuery)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (store *PostgresTaskStore) GetTasks() ([]Task, error) {
-	rows, err := store.db.Query("SELECT * from Tasks")
+// SELECT * from Tasks WHERE projectId=$1
+func (store *PostgresTaskStore) GetTasks(projectId int) ([]Task, error) {
+	rows, err := store.db.Query("SELECT * from Tasks WHERE projectId=$1", projectId)
 	if err != nil {
+		log.Println("Error getting tasks from database: ", err)
 		return nil, err
 	}
 	var tasks []Task
 	for rows.Next() {
 		task := Task{}
-		err = rows.Scan(&task.Id, &task.Title, &task.Description, &task.Status, &task.CreatedAt)
+		err = rows.Scan(&task.Id, &task.Title, &task.Description, &task.Status, &task.CreatedAt, &task.ProjectId)
 		if err != nil {
 			return nil, err
 		}
@@ -102,7 +110,7 @@ func (store *PostgresTaskStore) GetTaskById(id string) (Task, error) {
 }
 
 func (store *PostgresTaskStore) CreateTask(p *CreateTaskRequest) error {
-	_, err := store.db.Exec("INSERT INTO Tasks (title, description, status) VALUES($1, $2, $3)", p.Title, p.Description, p.Status)
+	_, err := store.db.Exec("INSERT INTO Tasks (title, description, status, projectId) VALUES($1, $2, $3, $4)", p.Title, p.Description, p.Status, p.ProjectId)
 	if err != nil {
 		return err
 	}
@@ -153,15 +161,18 @@ func NewPostgresProjectStore() (*PostgresProjectStore, error) {
 	}, nil
 }
 func (store *PostgresProjectStore) createProjectTable() error {
-	_, err := store.db.Exec(createProjectTableQuery)
-	if err != nil {
-		return err
-	}
-	_, err = store.db.Exec(createPriorityEnumQuery)
+
+	_, err := store.db.Exec(createPriorityEnumQuery)
 	if err != nil {
 		log.Println(err)
 		log.Println("Error creating priority enum continuing with the program...")
 	}
+
+	_, err = store.db.Exec(createProjectTableQuery)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

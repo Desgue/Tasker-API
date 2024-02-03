@@ -3,7 +3,7 @@ package main
 import "log"
 
 type ITaskService interface {
-	GetTasks() ([]Task, error)
+	GetTasks(projectId int) ([]Task, error)
 	CreateTask(*CreateTaskRequest) (*CreateTaskRequest, error)
 	GetTaskById(string) (Task, error)
 	UpdateTask(string, *CreateTaskRequest) error
@@ -20,8 +20,8 @@ func NewTaskService(store TaskStorage) *TaskService {
 	}
 }
 
-func (s *TaskService) GetTasks() ([]Task, error) {
-	projects, err := s.store.GetTasks()
+func (s *TaskService) GetTasks(projectId int) ([]Task, error) {
+	projects, err := s.store.GetTasks(projectId)
 	if err != nil {
 		log.Println(err)
 		return nil, err
