@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 )
 
 func WriteJson(w http.ResponseWriter, status int, v any) error {
@@ -50,7 +51,13 @@ func (s *ApiServer) Run() {
 	router.HandleFunc("/tasks", makeHttpHandler(s.handleTasks))
 	router.HandleFunc("/tasks/{id}", makeHttpHandler(s.handleTask))
 	log.Println("Server running and listening on port: ", s.listenAddr)
-	http.ListenAndServe(s.listenAddr, router)
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowCredentials: true,
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
+	})
+	handler := c.Handler(router)
+	http.ListenAndServe(s.listenAddr, handler)
 
 }
 

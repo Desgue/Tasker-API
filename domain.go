@@ -22,7 +22,7 @@ type Task struct {
 	Id          int       `json:"id"`
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
-	Status      status    `json:" status"`
+	Status      status    `json:"status"`
 	CreatedAt   time.Time `json:"createdAt"`
 }
 

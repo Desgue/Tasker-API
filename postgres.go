@@ -10,7 +10,6 @@ import (
 const (
 	createTypeEnumQuery  = `CREATE TYPE status as ENUM('Pending', 'InProgress', 'Done')`
 	createTaskTableQuery = `
-	CREATE TYPE status as ENUM('Pending', 'InProgress', 'Done');
 	CREATE TABLE IF NOT EXISTS Tasks (
 	id SMALLINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 	title varchar(255),
