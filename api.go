@@ -13,8 +13,8 @@ import (
 
 func WriteJson(w http.ResponseWriter, status int, v any) error {
 	w.WriteHeader(status)
-	/* w.Header().Add("Content-Type", "application/json")
-	w.Header().Add("Access-Control-Allow-Origin", "*") */
+	w.Header().Add("Content-Type", "application/json")
+	w.Header().Add("Access-Control-Allow-Origin", "*")
 	return json.NewEncoder(w).Encode(v)
 }
 
@@ -134,8 +134,8 @@ func (s *ApiServer) handleTask(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (s *ApiServer) handleGetTaskById(w http.ResponseWriter, r *http.Request) error {
-	id := mux.Vars(r)["id"]
-	log.Printf("GET request at http://localhost:3000/tasks/%s", id)
+	id := mux.Vars(r)["taskId"]
+	log.Printf("GET http://localhost:8000/projects/{projectId}/tasks/%s", id)
 	task, err := s.taskService.GetTaskById(id)
 	if err != nil {
 		log.Println(err)
@@ -145,8 +145,8 @@ func (s *ApiServer) handleGetTaskById(w http.ResponseWriter, r *http.Request) er
 }
 
 func (s *ApiServer) handleUpdateTask(w http.ResponseWriter, r *http.Request) error {
-	id := mux.Vars(r)["id"]
-	log.Printf("PUT request at http://localhost:3000/tasks/%s", id)
+	id := mux.Vars(r)["taskId"]
+	log.Printf("PUT http://localhost:8000/projects/{projectId}/tasks/%s", id)
 	task := new(CreateTaskRequest)
 	if err := json.NewDecoder(r.Body).Decode(task); err != nil {
 		log.Panicln(err)
@@ -158,8 +158,8 @@ func (s *ApiServer) handleUpdateTask(w http.ResponseWriter, r *http.Request) err
 	return WriteJson(w, http.StatusOK, ApiLog{StatusCode: http.StatusOK, Msg: fmt.Sprintf("Task with id %s updated successfully", id)})
 }
 func (s *ApiServer) handleDeleteTask(w http.ResponseWriter, r *http.Request) error {
-	id := mux.Vars(r)["id"]
-	log.Printf("DELETE request at http://localhost:3000/tasks/%s", id)
+	id := mux.Vars(r)["taskId"]
+	log.Printf("DELETE request at http://localhost:8000/projects/{projectId}/tasks/%s", id)
 
 	err := s.taskService.DeleteTask(id)
 	if err != nil {

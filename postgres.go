@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
 
 	_ "github.com/lib/pq"
@@ -91,7 +90,7 @@ func (store *PostgresTaskStore) GetTasks(projectId int) ([]Task, error) {
 		tasks = append(tasks, task)
 
 	}
-	fmt.Println(tasks)
+
 	return tasks, nil
 }
 
@@ -201,11 +200,15 @@ func (store *PostgresProjectStore) GetProjects() ([]Project, error) {
 func (store *PostgresProjectStore) GetProjectById(id string) (Project, error) {
 	rows, err := store.db.Query("SELECT * from Projects WHERE id=$1", id)
 	var project Project
-	err = rows.Scan(&project.Id, &project.Title, &project.Description, &project.Priority, &project.CreatedAt)
-	if err != nil {
-		return Project{}, err
+	for rows.Next() {
+		err = rows.Scan(&project.Id, &project.Title, &project.Description, &project.Priority, &project.CreatedAt)
+		if err != nil {
+			return Project{}, err
+		}
 	}
+
 	return project, nil
+
 }
 
 func (store *PostgresProjectStore) CreateProject(p *CreateProjectRequest) error {
@@ -225,7 +228,11 @@ func (store *PostgresProjectStore) UpdateProject(id string, p *CreateProjectRequ
 }
 
 func (store *PostgresProjectStore) DeleteProject(id string) error {
-	_, err := store.db.Exec("DELETE FROM Projects WHERE id=$1", id)
+	_, err := store.db.Exec("DELETE FROM Tasks WHERE projectId=$1", id)
+	if err != nil {
+		return err
+	}
+	_, err = store.db.Exec("DELETE FROM Projects WHERE id=$1", id)
 	if err != nil {
 		return err
 	}
