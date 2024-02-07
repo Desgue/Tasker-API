@@ -27,7 +27,39 @@ const (
 	priority priority DEFAULT 'Low',
 	createdAt TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );`
+	createUserTableQuery = `
+	CREATE TABLE IF NOT EXISTS Users (
+	id SMALLINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	username varchar(255),
+	email varchar(255),
+	cognitoId varchar(255),
+	createdAt TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);`
 )
+
+type PostgresStore struct {
+	connStr string
+	db      *sql.DB
+}
+
+func (store *PostgresStore) Ping() error {
+	if err := store.db.Ping(); err != nil {
+		log.Println("Error pinging the database: ", err)
+		return err
+	}
+	return nil
+}
+
+func NewPostgresStore(connStr string) (*PostgresStore, error) {
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		return nil, err
+	}
+	return &PostgresStore{
+		connStr: connStr,
+		db:      db,
+	}, nil
+}
 
 type TaskStorage interface {
 	GetTasks(projectId int) ([]Task, error)
@@ -41,19 +73,10 @@ type PostgresTaskStore struct {
 	db *sql.DB
 }
 
-func NewPostgresTaskStore() (*PostgresTaskStore, error) {
-	connStr := "user=ttracker dbname=ttracker password=ttracker sslmode=disable"
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		return nil, err
-	}
-
-	if err = db.Ping(); err != nil {
-		return nil, err
-	}
+func NewPostgresTaskStore(db *sql.DB) *PostgresTaskStore {
 	return &PostgresTaskStore{
 		db: db,
-	}, nil
+	}
 }
 
 func (store *PostgresTaskStore) Init() error {
@@ -146,18 +169,10 @@ type PostgresProjectStore struct {
 	db *sql.DB
 }
 
-func NewPostgresProjectStore() (*PostgresProjectStore, error) {
-	connStr := "user=ttracker dbname=ttracker password=ttracker sslmode=disable"
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		return nil, err
-	}
-	if err = db.Ping(); err != nil {
-		return nil, err
-	}
+func NewPostgresProjectStore(db *sql.DB) *PostgresProjectStore {
 	return &PostgresProjectStore{
 		db: db,
-	}, nil
+	}
 }
 func (store *PostgresProjectStore) createProjectTable() error {
 
@@ -233,6 +248,30 @@ func (store *PostgresProjectStore) DeleteProject(id string) error {
 		return err
 	}
 	_, err = store.db.Exec("DELETE FROM Projects WHERE id=$1", id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// This is the interface that that will define the behavior to interact with the database
+type UserStorage interface {
+	CreateUser(*CreateUserRequest) error
+}
+
+// This is the struct that will hold the database connection
+type PostgresUserStore struct {
+	db *sql.DB
+}
+
+func NewPostgresUserStore(db *sql.DB) *PostgresUserStore {
+	return &PostgresUserStore{
+		db: db,
+	}
+}
+
+func (store *PostgresUserStore) CreateUser(p *CreateUserRequest) error {
+	_, err := store.db.Exec("INSERT INTO Users (username, email, cognitoId) VALUES($1, $2, $3)", p.Username, p.Email, p.CognitoId)
 	if err != nil {
 		return err
 	}

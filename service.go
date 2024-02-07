@@ -164,3 +164,25 @@ func (s *ProjectService) DeleteProject(id string) error {
 	}
 	return nil
 }
+
+// User service that handles business logic before inserting user into the database
+type IUserService interface {
+	CreateUser(*CreateUserRequest) error
+}
+
+type UserService struct {
+	store UserStorage
+}
+
+func NewUserService(store UserStorage) *UserService {
+	return &UserService{
+		store: store,
+	}
+}
+
+func (s *UserService) CreateUser(r *CreateUserRequest) error {
+	if err := s.store.CreateUser(r); err != nil {
+		return err
+	}
+	return nil
+}

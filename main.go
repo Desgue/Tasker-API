@@ -4,27 +4,40 @@ import (
 	"log"
 )
 
-func main() {
+const (
+	connStr = "user=postgres password=postgres dbname=postgres sslmode=disable"
+)
 
-	projectStore, err := NewPostgresProjectStore()
+func main() {
+	// Database initialization
+	postgress, err := NewPostgresStore(connStr)
 	if err != nil {
 		log.Fatalln(err)
 	}
+	if err = postgress.Ping(); err != nil {
+		log.Fatalln(err)
+	}
+
+	// Project initialization
+	projectStore := NewPostgresProjectStore(postgress.db)
 	if err := projectStore.Init(); err != nil {
 		log.Fatalln(err)
 	}
 	projectService := NewProjectService(projectStore)
 
-	taskStore, err := NewPostgresTaskStore()
-	if err != nil {
-		log.Fatalln(err)
-	}
+	// Task initialization
+	taskStore := NewPostgresTaskStore(postgress.db)
 	if err := taskStore.Init(); err != nil {
 		log.Fatalln(err)
 	}
 	taskService := NewTaskService(taskStore)
 
-	server := NewApiServer(":8000", taskService, projectService)
+	// User initialization
+	userStore := NewPostgresUserStore(postgress.db)
+	userService := NewUserService(userStore)
+
+	// API server initialization
+	server := NewApiServer(":8000", taskService, projectService, userService)
 	server.Run()
 
 }
