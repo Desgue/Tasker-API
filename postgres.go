@@ -264,6 +264,13 @@ type PostgresUserStore struct {
 	db *sql.DB
 }
 
+func (store *PostgresUserStore) Init() error {
+	_, err := store.db.Exec(createUserTableQuery)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 func NewPostgresUserStore(db *sql.DB) *PostgresUserStore {
 	return &PostgresUserStore{
 		db: db,

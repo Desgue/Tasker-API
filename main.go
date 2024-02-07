@@ -2,19 +2,31 @@ package main
 
 import (
 	"log"
-)
+	"os"
 
-const (
-	connStr = "user=postgres password=postgres dbname=postgres sslmode=disable"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	// Load variables from .env file
+	if err := godotenv.Load(); err != nil {
+		log.Fatal("Error loading .env file")
+	}
+	connStr, ok := os.LookupEnv("DB_CONNSTR")
+	if !ok {
+		log.Fatalln("DB_CONNSTR not found in .env file")
+	}
+	hostPort, ok := os.LookupEnv("HOST_PORT")
+	if !ok {
+		log.Fatalln("HOST_PORT not found in .env file")
+	}
+
 	// Database initialization
 	postgress, err := NewPostgresStore(connStr)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	if err = postgress.Ping(); err != nil {
+	if err := postgress.Ping(); err != nil {
 		log.Fatalln(err)
 	}
 
@@ -34,10 +46,13 @@ func main() {
 
 	// User initialization
 	userStore := NewPostgresUserStore(postgress.db)
+	if err := userStore.Init(); err != nil {
+		log.Fatalln(err)
+	}
 	userService := NewUserService(userStore)
 
 	// API server initialization
-	server := NewApiServer(":8000", taskService, projectService, userService)
+	server := NewApiServer(hostPort, taskService, projectService, userService)
 	server.Run()
 
 }
