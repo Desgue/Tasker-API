@@ -16,12 +16,13 @@ const (
 	description text,
 	status status DEFAULT 'Pending',
 	createdAt TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-	projectId SMALLINT NOT NULL REFERENCES Projects(id) 
+	projectId SMALLINT NOT NULL REFERENCES Projects(id)
 );`
 	createPriorityEnumQuery = `CREATE TYPE priority as ENUM('High', 'Medium', 'Low');`
 	createProjectTableQuery = `
 	CREATE TABLE IF NOT EXISTS Projects (
 	id SMALLINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	userCognitoId varchar(255) NOT NULL,
 	title varchar(255),
 	description text,
 	priority priority DEFAULT 'Low',
@@ -29,10 +30,9 @@ const (
 );`
 	createUserTableQuery = `
 	CREATE TABLE IF NOT EXISTS Users (
-	id SMALLINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	cognitoId varchar(255) PRIMARY KEY,
 	username varchar(255),
 	email varchar(255),
-	cognitoId varchar(255),
 	createdAt TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );`
 )

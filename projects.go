@@ -14,18 +14,20 @@ type Priority string
 // This struct hold the project's tasks received from the database
 
 type Project struct {
-	Id          int       `json:"id"`
-	Title       string    `json:"title"`
-	Description string    `json:"description"`
-	Priority    Priority  `json:"priority"`
-	CreatedAt   time.Time `json:"createdAt"`
+	Id            int       `json:"id"`
+	Title         string    `json:"title"`
+	Description   string    `json:"description"`
+	Priority      Priority  `json:"priority"`
+	CreatedAt     time.Time `json:"createdAt"`
+	UserCognitoId string    `json:"userCognitoId"`
 }
 
 // This struct is used for holding the request data for creating a new project
 type CreateProjectRequest struct {
-	Title       string   `json:"title"`
-	Description string   `json:"description"`
-	Priority    Priority `json:"priority"`
+	Title         string   `json:"title"`
+	Description   string   `json:"description"`
+	Priority      Priority `json:"priority"`
+	UserCognitoId string   `json:"userCognitoId"`
 }
 
 func NewCreateProjectRequest(title, desc string, priority Priority) *CreateProjectRequest {
