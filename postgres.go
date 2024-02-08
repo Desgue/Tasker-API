@@ -202,7 +202,7 @@ func (store *PostgresProjectStore) GetProjects() ([]Project, error) {
 	var projects []Project
 	for rows.Next() {
 		project := Project{}
-		err = rows.Scan(&project.Id, &project.Title, &project.Description, &project.Priority, &project.CreatedAt)
+		err = rows.Scan(&project.Id, &project.UserCognitoId, &project.Title, &project.Description, &project.Priority, &project.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -227,7 +227,7 @@ func (store *PostgresProjectStore) GetProjectById(id string) (Project, error) {
 }
 
 func (store *PostgresProjectStore) CreateProject(p *CreateProjectRequest) error {
-	_, err := store.db.Exec("INSERT INTO Projects (title, description, priority) VALUES($1, $2, $3)", p.Title, p.Description, p.Priority)
+	_, err := store.db.Exec("INSERT INTO Projects (title, description, priority, userCognitoId) VALUES($1, $2, $3, $4)", p.Title, p.Description, p.Priority, p.UserCognitoId)
 	if err != nil {
 		return err
 	}
