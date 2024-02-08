@@ -158,7 +158,7 @@ func (store *PostgresTaskStore) DeleteTask(id string) error {
 
 // This is the interface that the service will use to interact with the database
 type ProjectStorage interface {
-	GetProjects() ([]Project, error)
+	GetProjects(userId string) ([]Project, error)
 	GetProjectById(string) (Project, error)
 	CreateProject(*CreateProjectRequest) error
 	UpdateProject(string, *CreateProjectRequest) error
@@ -194,8 +194,8 @@ func (store *PostgresProjectStore) Init() error {
 	return store.createProjectTable()
 }
 
-func (store *PostgresProjectStore) GetProjects() ([]Project, error) {
-	rows, err := store.db.Query("SELECT * from Projects")
+func (store *PostgresProjectStore) GetProjects(userId string) ([]Project, error) {
+	rows, err := store.db.Query("SELECT * from Projects where userCognitoId=$1", userId)
 	if err != nil {
 		return nil, err
 	}

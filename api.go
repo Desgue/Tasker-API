@@ -56,8 +56,8 @@ func (s *ApiServer) Run() {
 	router.HandleFunc("/projects/{projectId}/tasks", makeHttpHandler(s.handleTasks))
 	router.HandleFunc("/projects/{projectId}/tasks/{taskId}", makeHttpHandler(s.handleTask))
 
-	router.HandleFunc("/projects", makeHttpHandler(s.handleProjects))
-	router.HandleFunc("/projects/{projectId}", makeHttpHandler(s.handleProject))
+	router.HandleFunc("/users/{userId}/projects", makeHttpHandler(s.handleProjects))
+	router.HandleFunc("/users/{userId}/projects/{projectId}", makeHttpHandler(s.handleProject))
 
 	router.HandleFunc("/users", makeHttpHandler(s.handleUsers))
 
@@ -189,7 +189,8 @@ func (s *ApiServer) handleProjects(w http.ResponseWriter, r *http.Request) error
 }
 func (s *ApiServer) handleGetProjects(w http.ResponseWriter, r *http.Request) error {
 	log.Println("GET request on /projects")
-	projects, err := s.projectService.GetProjects()
+	userId := mux.Vars(r)["userId"]
+	projects, err := s.projectService.GetProjects(userId)
 	if err != nil {
 		log.Println("Err fetching projects: ", err)
 		return WriteJson(w, http.StatusBadRequest, ApiLog{Err: err.Error(), StatusCode: http.StatusBadRequest})

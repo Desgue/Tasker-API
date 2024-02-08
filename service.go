@@ -84,7 +84,7 @@ func (s *TaskService) DeleteTask(id string) error {
 // Project service that handles business logic before inserting project into the database
 
 type IProjectService interface {
-	GetProjects() ([]Project, error)
+	GetProjects(userId string) ([]Project, error)
 	CreateProject(*CreateProjectRequest) error
 	GetProjectById(string) (Project, error)
 	UpdateProject(string, *CreateProjectRequest) error
@@ -101,8 +101,8 @@ func NewProjectService(store ProjectStorage) *ProjectService {
 	}
 }
 
-func (s *ProjectService) GetProjects() ([]Project, error) {
-	projects, err := s.store.GetProjects()
+func (s *ProjectService) GetProjects(userId string) ([]Project, error) {
+	projects, err := s.store.GetProjects(userId)
 	if err != nil {
 		log.Println(err)
 		return nil, err
