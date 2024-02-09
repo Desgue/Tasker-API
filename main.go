@@ -44,15 +44,8 @@ func main() {
 	}
 	taskService := NewTaskService(taskStore)
 
-	// User initialization
-	userStore := NewPostgresUserStore(postgress.db)
-	if err := userStore.Init(); err != nil {
-		log.Fatalln(err)
-	}
-	userService := NewUserService(userStore)
-
 	// API server initialization
-	server := NewApiServer(hostPort, taskService, projectService, userService)
+	server := NewApiServer(hostPort, taskService, projectService)
 	server.Run()
 
 }

@@ -30,9 +30,8 @@ const (
 );`
 	createUserTableQuery = `
 	CREATE TABLE IF NOT EXISTS Users (
-	cognitoId varchar(255) PRIMARY KEY,
-	username varchar(255),
-	email varchar(255),
+	id SMALLINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	cognitoId varchar(255) NOT NULL,
 	createdAt TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );`
 )
@@ -256,7 +255,8 @@ func (store *PostgresProjectStore) DeleteProject(id string) error {
 
 // This is the interface that that will define the behavior to interact with the database
 type UserStorage interface {
-	CreateUser(*CreateUserRequest) error
+	CheckUser(string) (bool, error)
+	CreateUser(string) error
 }
 
 // This is the struct that will hold the database connection
@@ -277,8 +277,17 @@ func NewPostgresUserStore(db *sql.DB) *PostgresUserStore {
 	}
 }
 
-func (store *PostgresUserStore) CreateUser(p *CreateUserRequest) error {
-	_, err := store.db.Exec("INSERT INTO Users (username, email, cognitoId) VALUES($1, $2, $3)", p.Username, p.Email, p.CognitoId)
+func (store *PostgresUserStore) CheckUser(cognitoId string) (bool, error) {
+	var id string
+	err := store.db.QueryRow("SELECT cognitoId from Users where cognitoId=$1", cognitoId).Scan(&id)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+func (store *PostgresUserStore) CreateUser(cognitoId string) error {
+	_, err := store.db.Exec("INSERT INTO Users (cognitoId) VALUES($1)", cognitoId)
 	if err != nil {
 		return err
 	}

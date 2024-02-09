@@ -39,15 +39,13 @@ type ApiServer struct {
 	listenAddr     string
 	taskService    ITaskService
 	projectService IProjectService
-	userService    IUserService
 }
 
-func NewApiServer(addr string, svc ITaskService, psvc IProjectService, usvc IUserService) *ApiServer {
+func NewApiServer(addr string, svc ITaskService, psvc IProjectService) *ApiServer {
 	return &ApiServer{
 		listenAddr:     addr,
 		taskService:    svc,
 		projectService: psvc,
-		userService:    usvc,
 	}
 }
 
@@ -56,11 +54,10 @@ func (s *ApiServer) Run() {
 	router.HandleFunc("/projects/{projectId}/tasks", makeHttpHandler(s.handleTasks))
 	router.HandleFunc("/projects/{projectId}/tasks/{taskId}", makeHttpHandler(s.handleTask))
 
-	router.HandleFunc("/users/{userId}/projects", makeHttpHandler(s.handleProjects))
-	router.HandleFunc("/users/{userId}/projects/{projectId}", makeHttpHandler(s.handleProject))
+	router.HandleFunc("/projects", makeHttpHandler(s.handleProjects))
+	router.HandleFunc("/projects/{projectId}", makeHttpHandler(s.handleProject))
 
-	router.HandleFunc("/users", makeHttpHandler(s.handleUsers))
-
+	router.Use(verifyJwtMiddleware)
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"*"},
 		AllowCredentials: true,
@@ -82,7 +79,7 @@ func (s *ApiServer) handleTasks(w http.ResponseWriter, r *http.Request) error {
 	case "POST":
 		return s.handleCreateTask(w, r)
 	default:
-		return WriteJson(w, http.StatusBadRequest, ApiLog{Err: "Method not allowed on /tasks"})
+		return WriteJson(w, http.StatusBadRequest, ApiLog{Err: "Method not allowed on /projects/{projectId}/tasks"})
 	}
 
 }
@@ -261,28 +258,4 @@ func (s *ApiServer) handleDeleteProject(w http.ResponseWriter, r *http.Request) 
 		return WriteJson(w, http.StatusBadRequest, ApiLog{Err: err.Error(), StatusCode: http.StatusBadRequest})
 	}
 	return WriteJson(w, http.StatusOK, ApiLog{StatusCode: http.StatusOK, Msg: fmt.Sprintf("Project with id %s deleted successfully", id)})
-}
-
-// Handler for the creation of a new User
-
-func (s *ApiServer) handleUsers(w http.ResponseWriter, r *http.Request) error {
-	switch r.Method {
-	case "POST":
-		return s.handleCreateUser(w, r)
-	default:
-		return WriteJson(w, http.StatusBadRequest, ApiLog{Err: "Method not allowed on /users"})
-	}
-}
-
-func (s *ApiServer) handleCreateUser(w http.ResponseWriter, r *http.Request) error {
-	log.Println("POST request at http://localhost:3000/users")
-	user := new(CreateUserRequest)
-	if err := json.NewDecoder(r.Body).Decode(user); err != nil {
-		log.Panicln("Error decoding request body ", err)
-	}
-	if err := s.userService.CreateUser(user); err != nil {
-		log.Println("Err creating user: ", err)
-		return WriteJson(w, http.StatusBadRequest, ApiLog{Err: err.Error(), StatusCode: http.StatusBadRequest})
-	}
-	return WriteJson(w, http.StatusOK, ApiLog{StatusCode: http.StatusOK, Msg: "User created successfully"})
 }

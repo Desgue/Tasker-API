@@ -167,7 +167,7 @@ func (s *ProjectService) DeleteProject(id string) error {
 
 // User service that handles business logic before inserting user into the database
 type IUserService interface {
-	CreateUser(*CreateUserRequest) error
+	CreateUser(string) error
 }
 
 type UserService struct {
@@ -180,8 +180,8 @@ func NewUserService(store UserStorage) *UserService {
 	}
 }
 
-func (s *UserService) CreateUser(r *CreateUserRequest) error {
-	if err := s.store.CreateUser(r); err != nil {
+func (s *UserService) CreateUser(cognitoId string) error {
+	if err := s.store.CreateUser(cognitoId); err != nil {
 		return err
 	}
 	return nil

@@ -1,0 +1,28 @@
+Middlewares
+    - Authentication
+        - Get token and validate signature
+        - Extract subId, check if exist, if not inserting
+    - Authorization
+        - If user is authorized to access project
+
+SQL Joins for retrieving tasks from authorized project    
+    
+
+
+API SCHEMA
+
+Projects API
+GET - /projects
+GET - /projects/{projecId}
+POST - /projects
+PUT - /projects/{projectId}
+DELETE - /projects/{projectId}
+
+Tasks API
+GET - /projects/{projectId}/tasks
+GET - /projects/{projecId}/tasks/{taskId}
+POST - /projects/{projecId}/tasks/{taskId}
+PUT - /projects/{projecId}/tasks/{taskId}
+DELETE - /projects/{projecId}/tasks/{taskId}
+
+
