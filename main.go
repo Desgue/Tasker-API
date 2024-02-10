@@ -30,6 +30,12 @@ func main() {
 		log.Fatalln(err)
 	}
 
+	// User initialization
+	userStore := NewPostgresUserStore(postgress.db)
+	if err := userStore.Init(); err != nil {
+		log.Fatalln(err)
+	}
+
 	// Project initialization
 	projectStore := NewPostgresProjectStore(postgress.db)
 	if err := projectStore.Init(); err != nil {

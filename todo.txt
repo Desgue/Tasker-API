@@ -1,8 +1,9 @@
 Middlewares
     - Authentication
-        - Get token and validate signature
-        - Extract subId, check if exist, if not inserting
+        - Get token and validate signature - DONE
+        - Extract subId, check if exist, if not inserting - DONE
     - Authorization
+        - Check if user is present on database, if not add DONE
         - If user is authorized to access project
 
 SQL Joins for retrieving tasks from authorized project    

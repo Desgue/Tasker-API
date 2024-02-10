@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -37,7 +38,7 @@ func verifyJwtMiddleware(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Authenticating the user")
-		tokenString := r.Header.Get("Authorization")
+		tokenString := strings.Split(r.Header.Get("Authorization"), "Bearer ")[1]
 		tokenByte := []byte(tokenString)
 		verifyKeySet := getPublicKey(cognito_jwk_url)
 
@@ -72,7 +73,7 @@ func verifyJwtMiddleware(next http.Handler) http.Handler {
 			WriteJson(w, http.StatusInternalServerError, ApiLog{Err: "Error validating user in the database", StatusCode: http.StatusInternalServerError})
 			return
 		}
-
+		r.Header.Set("CognitoId", cognitoId)
 		next.ServeHTTP(w, r)
 	})
 }
