@@ -7,6 +7,9 @@ Middlewares
         - If user is authorized to access project
 
 SQL Joins for retrieving tasks from authorized project    
+
+Document api in swagger
+
     
 
 

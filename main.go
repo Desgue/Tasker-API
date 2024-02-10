@@ -12,13 +12,13 @@ func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Fatal("Error loading .env file")
 	}
-	connStr, ok := os.LookupEnv("DB_CONNSTR")
+	connStr, ok := os.LookupEnv("DATABASE_URL")
 	if !ok {
-		log.Fatalln("DB_CONNSTR not found in .env file")
+		connStr = os.Getenv("LOCAL_DB")
 	}
-	hostPort, ok := os.LookupEnv("HOST_PORT")
+	hostPort, ok := os.LookupEnv("PORT")
 	if !ok {
-		log.Fatalln("HOST_PORT not found in .env file")
+		hostPort = "8000"
 	}
 
 	// Database initialization
