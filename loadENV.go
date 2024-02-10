@@ -11,6 +11,7 @@ func loadENV() {
 	// Load variables from .env file
 	if os.Getenv("APP_ENV") != "production" {
 		log.Println("Loading .env file")
+		log.Println("APP_ENV: ", os.Getenv("APP_ENV"))
 
 		if err := godotenv.Load(); err != nil {
 			log.Fatal("Error loading .env file")
