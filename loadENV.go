@@ -10,6 +10,7 @@ import (
 func loadENV() {
 	// Load variables from .env file
 	if os.Getenv("APP_ENV") != "production" {
+		log.Println("Loading .env file")
 
 		if err := godotenv.Load(); err != nil {
 			log.Fatal("Error loading .env file")
@@ -39,6 +40,7 @@ func loadENV() {
 		listenAddr = "localhost:" + hostPort
 
 	} else {
+		log.Println("Loading environment variables")
 		connStr = os.Getenv("DATABASE_URL")
 		hostPort = os.Getenv("PORT")
 		listenAddr = `0.0.0.0:` + hostPort
