@@ -24,7 +24,16 @@ func verifyJwtMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Authenticating the user")
 		log.Println("Parsing Authorization Header next")
-		tokenString := strings.Split(r.Header.Get("Authorization"), "Bearer ")[1]
+		log.Println("Headers: ", r.Header)
+
+		header := r.Header.Get("Authorization")
+		if header == "" {
+			log.Println("Auth failed due to missing Authorization Header")
+			WriteJson(w, http.StatusUnauthorized, ApiLog{Err: "Missing Authorization Header", StatusCode: http.StatusUnauthorized})
+			return
+		}
+
+		tokenString := strings.Split(header, "Bearer ")[1]
 		log.Println("Authorization Header parsed")
 
 		tokenByte := []byte(tokenString)
