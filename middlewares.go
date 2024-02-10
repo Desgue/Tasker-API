@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -24,12 +25,16 @@ func verifyJwtMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Authenticating the user")
 		log.Println("Parsing Authorization Header next")
-		log.Println("Headers: ", r.Header)
 
 		header := r.Header.Get("Authorization")
 		if header == "" {
 			log.Println("Auth failed due to missing Authorization Header")
 			WriteJson(w, http.StatusUnauthorized, ApiLog{Err: "Missing Authorization Header", StatusCode: http.StatusUnauthorized})
+			return
+		}
+		if !strings.HasPrefix(header, "Bearer ") {
+			log.Println("Auth failed due to Invalid Authorization Header")
+			WriteJson(w, http.StatusUnauthorized, ApiLog{Err: "Invalid Authorization Header", StatusCode: http.StatusUnauthorized})
 			return
 		}
 
@@ -49,8 +54,8 @@ func verifyJwtMiddleware(next http.Handler) http.Handler {
 		log.Println("Parsing the token with the public key to validate")
 		token, err := jwt.Parse(tokenByte, jwt.WithKeySet(verifyKeySet), jwt.WithValidate(true))
 		if err != nil {
-			log.Println("Error parsing the token: ", err)
-			WriteJson(w, http.StatusUnauthorized, ApiLog{Err: "Error parsing the token", StatusCode: http.StatusUnauthorized})
+			log.Println("Error parsing the token with err message: ", err)
+			WriteJson(w, http.StatusUnauthorized, ApiLog{Err: fmt.Sprintf("Error parsing the token with err message: %s", err.Error()), StatusCode: http.StatusUnauthorized})
 			return
 		}
 		// Compare token claims for: Expire time, issuer, token_use
@@ -75,7 +80,13 @@ func verifyJwtMiddleware(next http.Handler) http.Handler {
 		cognitoId := token.Subject()
 		if err := validadeUserDb(cognitoId); err != nil {
 			log.Println("Error validating user in the database: ", err)
-			WriteJson(w, http.StatusInternalServerError, ApiLog{Err: "Error validating user in the database", StatusCode: http.StatusInternalServerError})
+			WriteJson(
+				w,
+				http.StatusInternalServerError,
+				ApiLog{Err: fmt.Sprintf("Error validating user in the database with err msg: %s",
+					err.Error()),
+					StatusCode: http.StatusInternalServerError,
+				})
 			return
 		}
 		log.Println("Setting header with cognito Id")
