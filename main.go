@@ -2,24 +2,21 @@ package main
 
 import (
 	"log"
-	"os"
+)
 
-	"github.com/joho/godotenv"
+var (
+	connStr         string
+	hostPort        string
+	listenAddr      string
+	ok              bool
+	cognito_jwk_url string
+	cognito_issuer  string
 )
 
 func main() {
 	// Load variables from .env file
-	if err := godotenv.Load(); err != nil {
-		log.Fatal("Error loading .env file")
-	}
-	connStr, ok := os.LookupEnv("DATABASE_URL")
-	if !ok {
-		connStr = os.Getenv("LOCAL_DB")
-	}
-	hostPort, ok := os.LookupEnv("PORT")
-	if !ok {
-		hostPort = "8000"
-	}
+
+	loadENV()
 
 	// Database initialization
 	postgress, err := NewPostgresStore(connStr)
@@ -51,7 +48,7 @@ func main() {
 	taskService := NewTaskService(taskStore)
 
 	// API server initialization
-	server := NewApiServer(hostPort, taskService, projectService)
+	server := NewApiServer(listenAddr, taskService, projectService)
 	server.Run()
 
 }

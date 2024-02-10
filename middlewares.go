@@ -4,11 +4,9 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
-	"github.com/joho/godotenv"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/lestrrat-go/jwx/jwt"
 )
@@ -22,19 +20,6 @@ func getPublicKey(url string) jwk.Set {
 	return set
 }
 func verifyJwtMiddleware(next http.Handler) http.Handler {
-	// get the public key from the cognito endpoint
-	if err := godotenv.Load(); err != nil {
-		log.Fatal("Error loading .env file")
-	}
-	cognito_jwk_url, ok := os.LookupEnv("COGNITO_JWK_URL")
-	if !ok {
-		log.Fatalln("Cognito Url not found in .env file")
-	}
-	// get the cognito endpoint
-	cognito_issuer, ok := os.LookupEnv("COGNITO_ISSUER")
-	if !ok {
-		log.Fatalln("Cognito Issuer not found in .env file")
-	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Authenticating the user")
@@ -79,11 +64,6 @@ func verifyJwtMiddleware(next http.Handler) http.Handler {
 }
 
 func validadeUserDb(cognitoId string) error {
-	connStr, ok := os.LookupEnv("DB_CONNSTR")
-	if !ok {
-		log.Fatalln("DB_CONNSTR not found in .env file")
-	}
-
 	db, err := NewPostgresStore(connStr)
 	if err != nil {
 		log.Println("Error initializing database", err)
