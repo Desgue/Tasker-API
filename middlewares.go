@@ -11,22 +11,33 @@ import (
 	"github.com/lestrrat-go/jwx/jwt"
 )
 
-func getPublicKey(url string) jwk.Set {
+func getPublicKey(url string) (jwk.Set, error) {
 	set, err := jwk.Fetch(context.Background(), url)
 	if err != nil {
 		log.Printf("failed to parse JWK: %s", err)
-
+		return nil, err
 	}
-	return set
+	return set, nil
 }
 func verifyJwtMiddleware(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Authenticating the user")
+		log.Println("Parsing Authorization Header next")
 		tokenString := strings.Split(r.Header.Get("Authorization"), "Bearer ")[1]
-		tokenByte := []byte(tokenString)
-		verifyKeySet := getPublicKey(cognito_jwk_url)
+		log.Println("Authorization Header parsed")
 
+		tokenByte := []byte(tokenString)
+
+		log.Println("Fetching the public key")
+		verifyKeySet, err := getPublicKey(cognito_jwk_url)
+		if err != nil {
+			log.Println("Error fetching the public key: ", err)
+			WriteJson(w, http.StatusInternalServerError, ApiLog{Err: "Error fetching the public key", StatusCode: http.StatusInternalServerError})
+			return
+		}
+
+		log.Println("Parsing the token with the public key to validate")
 		token, err := jwt.Parse(tokenByte, jwt.WithKeySet(verifyKeySet), jwt.WithValidate(true))
 		if err != nil {
 			log.Println("Error parsing the token: ", err)
@@ -58,7 +69,9 @@ func verifyJwtMiddleware(next http.Handler) http.Handler {
 			WriteJson(w, http.StatusInternalServerError, ApiLog{Err: "Error validating user in the database", StatusCode: http.StatusInternalServerError})
 			return
 		}
+		log.Println("Setting header with cognito Id")
 		r.Header.Set("CognitoId", cognitoId)
+		log.Println("Serving next handler")
 		next.ServeHTTP(w, r)
 	})
 }
