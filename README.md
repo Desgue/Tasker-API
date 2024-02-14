@@ -1,10 +1,12 @@
 # Tasker Project Management API
 
-**The Frontend of this Application can be found [here](https://github.com/Desgue/tasker)**
+**The Frontend repository of this Application can be found [here](https://github.com/Desgue/tasker)**
+
+**The link for the Amplify Hosted website can be found [here](https://production.d3ozduy4s4mqlc.amplifyapp.com/)**
 
 
 
-### Table of Contents
+## Table of Contents
 1. [Development Setup](#development-setup)
     - [Database](#database)
     - [Dependencies](#dependencies)
