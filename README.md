@@ -31,7 +31,7 @@
     ```bash
     docker run --name <your_name>_db -e POSTGRES_USER=<your_username> -e POSTGRES_PASSWORD=<your_password> -p 5432:5432 postgres
     ```
-    Use the code with caution.
+
 
 ### Dependencies:
 
