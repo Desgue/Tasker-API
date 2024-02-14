@@ -15,17 +15,8 @@
 3. [System Architecture](#system-architecture)
 4. [API Endpoints](#api-endpoints)
     - [Projects API](#projects-api)
-        - [GET /projects](#get-projects)
-        - [GET /projects/{projectId}](#get-projectsprojectid)
-        - [POST /projects](#post-projects)
-        - [PUT /projects/{projectId}](#put-projectsprojectid)
-        - [DELETE /projects/{projectId}](#delete-projectsprojectid)
     - [Tasks API](#tasks-api)
-        - [GET /projects/{projectId}/tasks](#get-projectsprojectidtasks)
-        - [GET /projects/{projectId}/tasks/{taskId}](#get-projectsprojectidtaskstaskid)
-        - [POST /projects/{projectId}/tasks](#post-projectsprojectidtasks)
-        - [PUT /projects/{projectId}/tasks/{taskId}](#put-projectsprojectidtaskstaskid)
-        - [DELETE /projects/{projectId}/tasks/{taskId}](#delete-projectsprojectidtaskstaskid)
+       
 
 
 ## Development Setup
@@ -44,12 +35,16 @@
 
 - **JWT Verification:**
   - [lestrrat-go/jwx](https://github.com/lestrrat-go/jwx) validates and verifies JWT tokens issued by Amazon Cognito.
+
 - **Environment Management:**
   - [joho/godotenv](https://github.com/joho/godotenv) parses and utilizes values from .env files.
+
 - **Database Interaction:**
   - [lib/pq](https://github.com/lib/pq) enables interaction with the PostgreSQL database.
+
 - **CORS Handling:**
   - [rs/cors](https://github.com/rs/cors) configures and handles Cross-Origin Resource Sharing (CORS) requests.
+
 
 ### Additional Notes:
 
