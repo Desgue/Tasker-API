@@ -84,11 +84,11 @@ func (s *TaskService) DeleteTask(id string) error {
 // Project service that handles business logic before inserting project into the database
 
 type IProjectService interface {
-	GetProjects() ([]Project, error)
+	GetProjects(userId string) ([]Project, error)
 	CreateProject(*CreateProjectRequest) error
-	GetProjectById(string) (Project, error)
+	GetProjectById(projectId, cognitoId string) (Project, error)
 	UpdateProject(string, *CreateProjectRequest) error
-	DeleteProject(string) error
+	DeleteProject(projectId, cognitoId string) error
 }
 
 type ProjectService struct {
@@ -101,8 +101,8 @@ func NewProjectService(store ProjectStorage) *ProjectService {
 	}
 }
 
-func (s *ProjectService) GetProjects() ([]Project, error) {
-	projects, err := s.store.GetProjects()
+func (s *ProjectService) GetProjects(cognitoId string) ([]Project, error) {
+	projects, err := s.store.GetProjects(cognitoId)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -110,8 +110,8 @@ func (s *ProjectService) GetProjects() ([]Project, error) {
 	return projects, nil
 }
 
-func (s *ProjectService) GetProjectById(id string) (Project, error) {
-	project, err := s.store.GetProjectById(id)
+func (s *ProjectService) GetProjectById(projectId, cognitoId string) (Project, error) {
+	project, err := s.store.GetProjectById(projectId, cognitoId)
 	if err != nil {
 		log.Println(err)
 		return Project{}, err
@@ -157,9 +157,30 @@ func (s *ProjectService) UpdateProject(id string, r *CreateProjectRequest) error
 	return nil
 }
 
-func (s *ProjectService) DeleteProject(id string) error {
-	if err := s.store.DeleteProject(id); err != nil {
+func (s *ProjectService) DeleteProject(projectId, cognitoId string) error {
+	if err := s.store.DeleteProject(projectId, cognitoId); err != nil {
+		return err
+	}
+	return nil
+}
 
+// User service that handles business logic before inserting user into the database
+type IUserService interface {
+	CreateUser(string) error
+}
+
+type UserService struct {
+	store UserStorage
+}
+
+func NewUserService(store UserStorage) *UserService {
+	return &UserService{
+		store: store,
+	}
+}
+
+func (s *UserService) CreateUser(cognitoId string) error {
+	if err := s.store.CreateUser(cognitoId); err != nil {
 		return err
 	}
 	return nil

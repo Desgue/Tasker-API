@@ -57,10 +57,12 @@ func (s *ApiServer) Run() {
 	router.HandleFunc("/projects", makeHttpHandler(s.handleProjects))
 	router.HandleFunc("/projects/{projectId}", makeHttpHandler(s.handleProject))
 
+	router.Use(verifyJwtMiddleware)
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"*"},
 		AllowCredentials: true,
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"*"},
 	})
 	handler := c.Handler(router)
 
@@ -78,7 +80,7 @@ func (s *ApiServer) handleTasks(w http.ResponseWriter, r *http.Request) error {
 	case "POST":
 		return s.handleCreateTask(w, r)
 	default:
-		return WriteJson(w, http.StatusBadRequest, ApiLog{Err: "Method not allowed on /tasks"})
+		return WriteJson(w, http.StatusBadRequest, ApiLog{Err: "Method not allowed on /projects/{projectId}/tasks"})
 	}
 
 }
@@ -185,7 +187,8 @@ func (s *ApiServer) handleProjects(w http.ResponseWriter, r *http.Request) error
 }
 func (s *ApiServer) handleGetProjects(w http.ResponseWriter, r *http.Request) error {
 	log.Println("GET request on /projects")
-	projects, err := s.projectService.GetProjects()
+	cognitoId := r.Header.Get("CognitoId")
+	projects, err := s.projectService.GetProjects(cognitoId)
 	if err != nil {
 		log.Println("Err fetching projects: ", err)
 		return WriteJson(w, http.StatusBadRequest, ApiLog{Err: err.Error(), StatusCode: http.StatusBadRequest})
@@ -199,6 +202,7 @@ func (s *ApiServer) handleCreateProject(w http.ResponseWriter, r *http.Request) 
 		log.Panicln("Error decoding request body, terminating program: ", err)
 		return err
 	}
+	createProjectReq.UserCognitoId = r.Header.Get("CognitoId")
 	if err := s.projectService.CreateProject(createProjectReq); err != nil {
 		log.Println("Error creating project: ", err)
 		return WriteJson(w, http.StatusBadRequest, ApiLog{Err: err.Error(), StatusCode: http.StatusBadRequest})
@@ -223,9 +227,10 @@ func (s *ApiServer) handleProject(w http.ResponseWriter, r *http.Request) error 
 }
 
 func (s *ApiServer) handleGetProjectById(w http.ResponseWriter, r *http.Request) error {
-	id := mux.Vars(r)["projectId"]
-	log.Printf("GET request at http://localhost:3000/projects/%s", id)
-	project, err := s.projectService.GetProjectById(id)
+	projectId := mux.Vars(r)["projectId"]
+	cognitoId := r.Header.Get("CognitoId")
+	log.Printf("GET request at http://localhost:3000/projects/%s", projectId)
+	project, err := s.projectService.GetProjectById(projectId, cognitoId)
 	if err != nil {
 		log.Println("Err fetching project: ", err)
 		return WriteJson(w, http.StatusBadRequest, ApiLog{Err: err.Error(), StatusCode: http.StatusBadRequest})
@@ -234,26 +239,36 @@ func (s *ApiServer) handleGetProjectById(w http.ResponseWriter, r *http.Request)
 }
 
 func (s *ApiServer) handleUpdateProject(w http.ResponseWriter, r *http.Request) error {
-	id := mux.Vars(r)["projectId"]
-	log.Printf("PUT request at http://localhost:3000/projects/%s", id)
+	projectId := mux.Vars(r)["projectId"]
+	cognitoId := r.Header.Get("CognitoId")
+
+	log.Printf("PUT request at http://localhost:3000/projects/%s", projectId)
+
 	project := new(CreateProjectRequest)
 	if err := json.NewDecoder(r.Body).Decode(project); err != nil {
 		log.Panicln("Error decoding request body ", err)
 	}
-	if err := s.projectService.UpdateProject(id, project); err != nil {
+	project.UserCognitoId = cognitoId
+
+	if err := s.projectService.UpdateProject(projectId, project); err != nil {
 		log.Println("Err updating project: ", err)
 		return WriteJson(w, http.StatusBadRequest, ApiLog{Err: err.Error(), StatusCode: http.StatusBadRequest})
 	}
-	return WriteJson(w, http.StatusOK, ApiLog{StatusCode: http.StatusOK, Msg: fmt.Sprintf("Project with id %s updated successfully", id)})
+
+	return WriteJson(w, http.StatusOK, ApiLog{StatusCode: http.StatusOK, Msg: fmt.Sprintf("Project with id %s updated successfully", projectId)})
 }
 
 func (s *ApiServer) handleDeleteProject(w http.ResponseWriter, r *http.Request) error {
-	id := mux.Vars(r)["projectId"]
-	log.Printf("DELETE request at http://localhost:3000/projects/%s", id)
-	err := s.projectService.DeleteProject(id)
+	projectId := mux.Vars(r)["projectId"]
+	cognitoId := r.Header.Get("CognitoId")
+
+	log.Printf("DELETE request at http://localhost:3000/projects/%s", projectId)
+
+	err := s.projectService.DeleteProject(projectId, cognitoId)
 	if err != nil {
 		log.Println("Err deleting project: ", err)
 		return WriteJson(w, http.StatusBadRequest, ApiLog{Err: err.Error(), StatusCode: http.StatusBadRequest})
 	}
-	return WriteJson(w, http.StatusOK, ApiLog{StatusCode: http.StatusOK, Msg: fmt.Sprintf("Project with id %s deleted successfully", id)})
+
+	return WriteJson(w, http.StatusOK, ApiLog{StatusCode: http.StatusOK, Msg: fmt.Sprintf("Project with id %s deleted successfully", projectId)})
 }

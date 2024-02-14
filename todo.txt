@@ -1,0 +1,32 @@
+Middlewares
+    - Authentication
+        - Get token and validate signature - DONE
+        - Extract subId, check if exist, if not inserting - DONE
+    - Authorization
+        - Check if user is present on database, if not add DONE
+        - If user is authorized to access project
+
+SQL Joins for retrieving tasks from authorized project    
+
+Document api in swagger
+
+    
+
+
+API SCHEMA
+
+Projects API
+GET - /projects
+GET - /projects/{projecId}
+POST - /projects
+PUT - /projects/{projectId}
+DELETE - /projects/{projectId}
+
+Tasks API
+GET - /projects/{projectId}/tasks
+GET - /projects/{projecId}/tasks/{taskId}
+POST - /projects/{projecId}/tasks/{taskId}
+PUT - /projects/{projecId}/tasks/{taskId}
+DELETE - /projects/{projecId}/tasks/{taskId}
+
+
