@@ -48,11 +48,6 @@
   - [rs/cors](https://github.com/rs/cors) configures and handles Cross-Origin Resource Sharing (CORS) requests.
 
 
-### Additional Notes:
-
-- **Development:**
-  - This guide is for development environments. Production configurations may differ.
-
 # Features
 
 ### Implemented Features
