@@ -12,6 +12,22 @@ const (
 
 type status string
 
+type TaskStorage interface {
+	GetTasks(projectId int) ([]Task, error)
+	GetTaskById(string) (Task, error)
+	CreateTask(*CreateTaskRequest) error
+	UpdateTask(string, *CreateTaskRequest) error
+	DeleteTask(string) error
+}
+
+type ITaskService interface {
+	GetTasks(projectId int) ([]Task, error)
+	CreateTask(*CreateTaskRequest) (*CreateTaskRequest, error)
+	GetTaskById(string) (Task, error)
+	UpdateTask(string, *CreateTaskRequest) error
+	DeleteTask(string) error
+}
+
 type CreateTaskRequest struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`

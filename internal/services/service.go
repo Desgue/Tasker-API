@@ -4,22 +4,13 @@ import (
 	"log"
 
 	"github.com/Desgue/ttracker-api/internal/domain"
-	repo "github.com/Desgue/ttracker-api/internal/repository"
 )
 
-type ITaskService interface {
-	GetTasks(projectId int) ([]domain.Task, error)
-	CreateTask(*domain.CreateTaskRequest) (*domain.CreateTaskRequest, error)
-	GetTaskById(string) (domain.Task, error)
-	UpdateTask(string, *domain.CreateTaskRequest) error
-	DeleteTask(string) error
-}
-
 type TaskService struct {
-	store repo.TaskStorage
+	store domain.TaskStorage
 }
 
-func NewTaskService(store repo.TaskStorage) *TaskService {
+func NewTaskService(store domain.TaskStorage) *TaskService {
 	return &TaskService{
 		store: store,
 	}
@@ -88,19 +79,11 @@ func (s *TaskService) DeleteTask(id string) error {
 
 // domain.Project service that handles business logic before inserting project into the database
 
-type IProjectService interface {
-	GetProjects(userId string) ([]domain.Project, error)
-	CreateProject(*domain.CreateProjectRequest) error
-	GetProjectById(projectId, cognitoId string) (domain.Project, error)
-	UpdateProject(string, *domain.CreateProjectRequest) error
-	DeleteProject(projectId, cognitoId string) error
-}
-
 type ProjectService struct {
-	store repo.ProjectStorage
+	store domain.ProjectStorage
 }
 
-func NewProjectService(store repo.ProjectStorage) *ProjectService {
+func NewProjectService(store domain.ProjectStorage) *ProjectService {
 	return &ProjectService{
 		store: store,
 	}
@@ -170,15 +153,12 @@ func (s *ProjectService) DeleteProject(projectId, cognitoId string) error {
 }
 
 // User service that handles business logic before inserting user into the database
-type IUserService interface {
-	CreateUser(string) error
-}
 
 type UserService struct {
-	store repo.UserStorage
+	store domain.UserStorage
 }
 
-func NewUserService(store repo.UserStorage) *UserService {
+func NewUserService(store domain.UserStorage) *UserService {
 	return &UserService{
 		store: store,
 	}

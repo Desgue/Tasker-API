@@ -61,14 +61,6 @@ func NewPostgresStore(connStr string) (*PostgresStore, error) {
 	}, nil
 }
 
-type TaskStorage interface {
-	GetTasks(projectId int) ([]domain.Task, error)
-	GetTaskById(string) (domain.Task, error)
-	CreateTask(*domain.CreateTaskRequest) error
-	UpdateTask(string, *domain.CreateTaskRequest) error
-	DeleteTask(string) error
-}
-
 type PostgresTaskStore struct {
 	DB *sql.DB
 }
@@ -154,15 +146,6 @@ func (store *PostgresTaskStore) DeleteTask(id string) error {
 		return err
 	}
 	return nil
-}
-
-// This is the interface that the service will use to interact with the database
-type ProjectStorage interface {
-	GetProjects(userId string) ([]domain.Project, error)
-	GetProjectById(projectId, cognitoId string) (domain.Project, error)
-	CreateProject(*domain.CreateProjectRequest) error
-	UpdateProject(string, *domain.CreateProjectRequest) error
-	DeleteProject(projectId, cognitoId string) error
 }
 
 type PostgresProjectStore struct {
@@ -340,12 +323,6 @@ func (store *PostgresProjectStore) DeleteProject(projectId, cognitoId string) er
 		return err
 	}
 	return nil
-}
-
-// This is the interface that that will define the behavior to interact with the database
-type UserStorage interface {
-	CheckUser(string) (bool, error)
-	CreateUser(string) error
 }
 
 // This is the struct that will hold the database connection

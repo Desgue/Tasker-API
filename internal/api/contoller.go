@@ -8,7 +8,6 @@ import (
 	"strconv"
 
 	"github.com/Desgue/ttracker-api/internal/domain"
-	svc "github.com/Desgue/ttracker-api/internal/services"
 
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
@@ -40,11 +39,11 @@ func makeHttpHandler(f apiFunc) http.HandlerFunc {
 
 type ApiServer struct {
 	listenAddr     string
-	taskService    svc.ITaskService
-	projectService svc.IProjectService
+	taskService    domain.ITaskService
+	projectService domain.IProjectService
 }
 
-func NewApiServer(addr string, svc svc.ITaskService, psvc svc.IProjectService) *ApiServer {
+func NewApiServer(addr string, svc domain.ITaskService, psvc domain.IProjectService) *ApiServer {
 	return &ApiServer{
 		listenAddr:     addr,
 		taskService:    svc,

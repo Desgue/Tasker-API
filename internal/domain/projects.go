@@ -11,6 +11,23 @@ const (
 
 type Priority string
 
+// This is the interface that the service will use to interact with the database
+type ProjectStorage interface {
+	GetProjects(userId string) ([]Project, error)
+	GetProjectById(projectId, cognitoId string) (Project, error)
+	CreateProject(*CreateProjectRequest) error
+	UpdateProject(string, *CreateProjectRequest) error
+	DeleteProject(projectId, cognitoId string) error
+}
+
+type IProjectService interface {
+	GetProjects(userId string) ([]Project, error)
+	CreateProject(*CreateProjectRequest) error
+	GetProjectById(projectId, cognitoId string) (Project, error)
+	UpdateProject(string, *CreateProjectRequest) error
+	DeleteProject(projectId, cognitoId string) error
+}
+
 // This struct hold the project's tasks received from the database
 
 type Project struct {
