@@ -10,9 +10,19 @@ import (
 	"github.com/gorilla/mux"
 )
 
+type ProjectController struct {
+	service domain.IProjectService
+}
+
+func NewProjectController(service domain.IProjectService) *ProjectController {
+	return &ProjectController{
+		service: service,
+	}
+}
+
 // Handler for calls to /projects
 
-func (s *ApiServer) handleProjects(w http.ResponseWriter, r *http.Request) error {
+func (s *ProjectController) handleProjects(w http.ResponseWriter, r *http.Request) error {
 	switch r.Method {
 	case "GET":
 		return s.handleGetProjects(w, r)
@@ -23,17 +33,17 @@ func (s *ApiServer) handleProjects(w http.ResponseWriter, r *http.Request) error
 	}
 
 }
-func (s *ApiServer) handleGetProjects(w http.ResponseWriter, r *http.Request) error {
+func (s *ProjectController) handleGetProjects(w http.ResponseWriter, r *http.Request) error {
 
 	cognitoId := r.Header.Get("CognitoId")
-	projects, err := s.projectService.GetProjects(cognitoId)
+	projects, err := s.service.GetProjects(cognitoId)
 	if err != nil {
 		log.Println("Err fetching projects: ", err)
 		return WriteJson(w, http.StatusBadRequest, ApiLog{Err: err.Error(), StatusCode: http.StatusBadRequest})
 	}
 	return WriteJson(w, http.StatusOK, projects)
 }
-func (s *ApiServer) handleCreateProject(w http.ResponseWriter, r *http.Request) error {
+func (s *ProjectController) handleCreateProject(w http.ResponseWriter, r *http.Request) error {
 
 	createProjectReq := new(domain.CreateProjectRequest)
 	if err := json.NewDecoder(r.Body).Decode(createProjectReq); err != nil {
@@ -41,7 +51,7 @@ func (s *ApiServer) handleCreateProject(w http.ResponseWriter, r *http.Request) 
 		return err
 	}
 	createProjectReq.UserCognitoId = r.Header.Get("CognitoId")
-	if err := s.projectService.CreateProject(createProjectReq); err != nil {
+	if err := s.service.CreateProject(createProjectReq); err != nil {
 		log.Println("Error creating project: ", err)
 		return WriteJson(w, http.StatusBadRequest, ApiLog{Err: err.Error(), StatusCode: http.StatusBadRequest})
 	}
@@ -50,7 +60,7 @@ func (s *ApiServer) handleCreateProject(w http.ResponseWriter, r *http.Request) 
 
 // Handler for calls to /projects/{projectId}
 
-func (s *ApiServer) handleProject(w http.ResponseWriter, r *http.Request) error {
+func (s *ProjectController) handleProject(w http.ResponseWriter, r *http.Request) error {
 	switch r.Method {
 	case "GET":
 		return s.handleGetProjectById(w, r)
@@ -64,11 +74,11 @@ func (s *ApiServer) handleProject(w http.ResponseWriter, r *http.Request) error 
 	}
 }
 
-func (s *ApiServer) handleGetProjectById(w http.ResponseWriter, r *http.Request) error {
+func (s *ProjectController) handleGetProjectById(w http.ResponseWriter, r *http.Request) error {
 	projectId := mux.Vars(r)["projectId"]
 	cognitoId := r.Header.Get("CognitoId")
 
-	project, err := s.projectService.GetProjectById(projectId, cognitoId)
+	project, err := s.service.GetProjectById(projectId, cognitoId)
 	if err != nil {
 		log.Println("Err fetching project: ", err)
 		return WriteJson(w, http.StatusBadRequest, ApiLog{Err: err.Error(), StatusCode: http.StatusBadRequest})
@@ -76,7 +86,7 @@ func (s *ApiServer) handleGetProjectById(w http.ResponseWriter, r *http.Request)
 	return WriteJson(w, http.StatusOK, &project)
 }
 
-func (s *ApiServer) handleUpdateProject(w http.ResponseWriter, r *http.Request) error {
+func (s *ProjectController) handleUpdateProject(w http.ResponseWriter, r *http.Request) error {
 	projectId := mux.Vars(r)["projectId"]
 	cognitoId := r.Header.Get("CognitoId")
 
@@ -86,7 +96,7 @@ func (s *ApiServer) handleUpdateProject(w http.ResponseWriter, r *http.Request) 
 	}
 	project.UserCognitoId = cognitoId
 
-	if err := s.projectService.UpdateProject(projectId, project); err != nil {
+	if err := s.service.UpdateProject(projectId, project); err != nil {
 		log.Println("Err updating project: ", err)
 		return WriteJson(w, http.StatusBadRequest, ApiLog{Err: err.Error(), StatusCode: http.StatusBadRequest})
 	}
@@ -94,11 +104,11 @@ func (s *ApiServer) handleUpdateProject(w http.ResponseWriter, r *http.Request) 
 	return WriteJson(w, http.StatusOK, ApiLog{StatusCode: http.StatusOK, Msg: fmt.Sprintf("Project with id %s updated successfully", projectId)})
 }
 
-func (s *ApiServer) handleDeleteProject(w http.ResponseWriter, r *http.Request) error {
+func (s *ProjectController) handleDeleteProject(w http.ResponseWriter, r *http.Request) error {
 	projectId := mux.Vars(r)["projectId"]
 	cognitoId := r.Header.Get("CognitoId")
 
-	err := s.projectService.DeleteProject(projectId, cognitoId)
+	err := s.service.DeleteProject(projectId, cognitoId)
 	if err != nil {
 		log.Println("Err deleting project: ", err)
 		return WriteJson(w, http.StatusBadRequest, ApiLog{Err: err.Error(), StatusCode: http.StatusBadRequest})

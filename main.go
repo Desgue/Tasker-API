@@ -31,16 +31,19 @@ func main() {
 
 	// Project initialization
 	projectStore := repo.NewPostgresProjectStore(postgress.DB)
-
 	projectService := svc.NewProjectService(projectStore)
 
 	// Task initialization
 	taskStore := repo.NewPostgresTaskStore(postgress.DB)
-
 	taskService := svc.NewTaskService(taskStore)
 
-	// API server initialization
-	server := api.NewApiServer(util.ListenAddr, taskService, projectService)
+	// Server initialization
+	contollers := &api.Controllers{
+		Project: api.NewProjectController(projectService),
+		Task:    api.NewTaskController(taskService),
+	}
+
+	server := api.NewServer(util.ListenAddr, contollers)
 	server.Run()
 
 }
