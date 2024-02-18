@@ -22,25 +22,19 @@ func main() {
 	if err := postgress.Ping(); err != nil {
 		log.Fatalln(err)
 	}
+	postgress.Init()
 
 	// User initialization
-	userStore := repo.NewPostgresUserStore(postgress.DB)
-	if err := userStore.Init(); err != nil {
-		log.Fatalln(err)
-	}
+	//userStore := repo.NewPostgresUserStore(postgress.DB)
 
 	// Project initialization
 	projectStore := repo.NewPostgresProjectStore(postgress.DB)
-	if err := projectStore.Init(); err != nil {
-		log.Fatalln(err)
-	}
+
 	projectService := svc.NewProjectService(projectStore)
 
 	// Task initialization
 	taskStore := repo.NewPostgresTaskStore(postgress.DB)
-	if err := taskStore.Init(); err != nil {
-		log.Fatalln(err)
-	}
+
 	taskService := svc.NewTaskService(taskStore)
 
 	// API server initialization
