@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"encoding/json"
@@ -6,6 +6,9 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+
+	"github.com/Desgue/ttracker-api/internal/domain"
+	svc "github.com/Desgue/ttracker-api/internal/services"
 
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
@@ -37,11 +40,11 @@ func makeHttpHandler(f apiFunc) http.HandlerFunc {
 
 type ApiServer struct {
 	listenAddr     string
-	taskService    ITaskService
-	projectService IProjectService
+	taskService    svc.ITaskService
+	projectService svc.IProjectService
 }
 
-func NewApiServer(addr string, svc ITaskService, psvc IProjectService) *ApiServer {
+func NewApiServer(addr string, svc svc.ITaskService, psvc svc.IProjectService) *ApiServer {
 	return &ApiServer{
 		listenAddr:     addr,
 		taskService:    svc,
@@ -61,7 +64,7 @@ func (s *ApiServer) Run() {
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"*"},
 		AllowCredentials: true,
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"*"},
 	})
 	handler := c.Handler(router)
@@ -106,7 +109,7 @@ func (s *ApiServer) handleGetTasks(w http.ResponseWriter, r *http.Request) error
 func (s *ApiServer) handleCreateTask(w http.ResponseWriter, r *http.Request) error {
 	log.Println("POST resquest at http://localhost:8000/projects/{projectId}/tasks")
 
-	createTaskReq := new(CreateTaskRequest)
+	createTaskReq := new(domain.CreateTaskRequest)
 	if err := json.NewDecoder(r.Body).Decode(createTaskReq); err != nil {
 		log.Panicln(err)
 		return err
@@ -149,7 +152,7 @@ func (s *ApiServer) handleGetTaskById(w http.ResponseWriter, r *http.Request) er
 func (s *ApiServer) handleUpdateTask(w http.ResponseWriter, r *http.Request) error {
 	id := mux.Vars(r)["taskId"]
 	log.Printf("PUT http://localhost:8000/projects/{projectId}/tasks/%s", id)
-	task := new(CreateTaskRequest)
+	task := new(domain.CreateTaskRequest)
 	if err := json.NewDecoder(r.Body).Decode(task); err != nil {
 		log.Panicln(err)
 	}
@@ -197,7 +200,7 @@ func (s *ApiServer) handleGetProjects(w http.ResponseWriter, r *http.Request) er
 }
 func (s *ApiServer) handleCreateProject(w http.ResponseWriter, r *http.Request) error {
 	log.Println("POST request on /projects")
-	createProjectReq := new(CreateProjectRequest)
+	createProjectReq := new(domain.CreateProjectRequest)
 	if err := json.NewDecoder(r.Body).Decode(createProjectReq); err != nil {
 		log.Panicln("Error decoding request body, terminating program: ", err)
 		return err
@@ -244,7 +247,7 @@ func (s *ApiServer) handleUpdateProject(w http.ResponseWriter, r *http.Request) 
 
 	log.Printf("PUT request at http://localhost:3000/projects/%s", projectId)
 
-	project := new(CreateProjectRequest)
+	project := new(domain.CreateProjectRequest)
 	if err := json.NewDecoder(r.Body).Decode(project); err != nil {
 		log.Panicln("Error decoding request body ", err)
 	}
