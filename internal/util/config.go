@@ -14,12 +14,14 @@ var (
 	Ok              bool
 	Cognito_jwk_url string
 	Cognito_issuer  string
+	IsProd          bool
 )
 
 func LoadENV() {
 	// Load variables from .env file
 	if os.Getenv("APP_ENV") != "production" {
 		log.Println("Loading .env file")
+		IsProd = false
 
 		if err := godotenv.Load(); err != nil {
 			log.Fatal("Error loading .env file")
@@ -50,6 +52,7 @@ func LoadENV() {
 
 	} else {
 		log.Println("Loading environment variables")
+		IsProd = true
 		ConnStr = os.Getenv("DATABASE_URL")
 		HostPort = os.Getenv("PORT")
 		ListenAddr = `0.0.0.0:` + HostPort

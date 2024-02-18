@@ -15,14 +15,8 @@ import (
 	"github.com/lestrrat-go/jwx/jwt"
 )
 
-func getPublicKey(url string) (jwk.Set, error) {
-	set, err := jwk.Fetch(context.Background(), url)
-	if err != nil {
-		log.Printf("failed to parse JWK: %s", err)
-		return nil, err
-	}
-	return set, nil
-}
+// JWT MIDDLEWARE
+
 func verifyJwtMiddleware(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -99,6 +93,8 @@ func verifyJwtMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+// HELPER FUNCTIONS FOR JWT MIDDLEWARE
+
 func validadeUserDb(cognitoId string) error {
 	db, err := repo.NewPostgresStore(util.ConnStr)
 	if err != nil {
@@ -115,4 +111,33 @@ func validadeUserDb(cognitoId string) error {
 		userStore.CreateUser(cognitoId)
 	}
 	return nil
+}
+
+func getPublicKey(url string) (jwk.Set, error) {
+	set, err := jwk.Fetch(context.Background(), url)
+	if err != nil {
+		log.Printf("failed to parse JWK: %s", err)
+		return nil, err
+	}
+	return set, nil
+}
+
+// LOGGING MIDDLEWARE
+
+func loggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Do stuff here
+		uri := r.RequestURI
+		method := r.Method
+		referrer := r.Referer()
+		userAgent := r.UserAgent()
+
+		log.Printf(` %s -> %s 
+		Referrer: %s 
+		User-Agent: %s`,
+			method, uri, referrer, userAgent)
+
+		// Call the next handler, which can be another middleware in the chain, or the final handler.
+		next.ServeHTTP(w, r)
+	})
 }

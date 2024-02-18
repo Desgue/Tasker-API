@@ -22,7 +22,9 @@ func main() {
 	if err := postgress.Ping(); err != nil {
 		log.Fatalln(err)
 	}
-	postgress.Init()
+	if !util.IsProd {
+		postgress.Init()
+	}
 
 	// User initialization
 	//userStore := repo.NewPostgresUserStore(postgress.DB)
