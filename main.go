@@ -2,24 +2,20 @@ package main
 
 import (
 	"log"
-)
 
-var (
-	connStr         string
-	hostPort        string
-	listenAddr      string
-	ok              bool
-	cognito_jwk_url string
-	cognito_issuer  string
+	"github.com/Desgue/ttracker-api/internal/api"
+	repo "github.com/Desgue/ttracker-api/internal/repository"
+	svc "github.com/Desgue/ttracker-api/internal/services"
+	"github.com/Desgue/ttracker-api/internal/util"
 )
 
 func main() {
 	// Load variables from .env file
 
-	loadENV()
+	util.LoadENV()
 
 	// Database initialization
-	postgress, err := NewPostgresStore(connStr)
+	postgress, err := repo.NewPostgresStore(util.ConnStr)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -28,27 +24,27 @@ func main() {
 	}
 
 	// User initialization
-	userStore := NewPostgresUserStore(postgress.db)
+	userStore := repo.NewPostgresUserStore(postgress.DB)
 	if err := userStore.Init(); err != nil {
 		log.Fatalln(err)
 	}
 
 	// Project initialization
-	projectStore := NewPostgresProjectStore(postgress.db)
+	projectStore := repo.NewPostgresProjectStore(postgress.DB)
 	if err := projectStore.Init(); err != nil {
 		log.Fatalln(err)
 	}
-	projectService := NewProjectService(projectStore)
+	projectService := svc.NewProjectService(projectStore)
 
 	// Task initialization
-	taskStore := NewPostgresTaskStore(postgress.db)
+	taskStore := repo.NewPostgresTaskStore(postgress.DB)
 	if err := taskStore.Init(); err != nil {
 		log.Fatalln(err)
 	}
-	taskService := NewTaskService(taskStore)
+	taskService := svc.NewTaskService(taskStore)
 
 	// API server initialization
-	server := NewApiServer(listenAddr, taskService, projectService)
+	server := api.NewApiServer(util.ListenAddr, taskService, projectService)
 	server.Run()
 
 }

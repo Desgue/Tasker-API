@@ -1,4 +1,4 @@
-package main
+package domain
 
 // User struct is used to hold the user data received from the database
 type User struct {

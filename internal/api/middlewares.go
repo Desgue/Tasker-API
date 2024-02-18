@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"context"
@@ -7,6 +7,9 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	repo "github.com/Desgue/ttracker-api/internal/repository"
+	"github.com/Desgue/ttracker-api/internal/util"
 
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/lestrrat-go/jwx/jwt"
@@ -44,7 +47,7 @@ func verifyJwtMiddleware(next http.Handler) http.Handler {
 		tokenByte := []byte(tokenString)
 
 		log.Println("Fetching the public key")
-		verifyKeySet, err := getPublicKey(cognito_jwk_url)
+		verifyKeySet, err := getPublicKey(util.Cognito_jwk_url)
 		if err != nil {
 			log.Println("Error fetching the public key: ", err)
 			WriteJson(w, http.StatusInternalServerError, ApiLog{Err: "Error fetching the public key", StatusCode: http.StatusInternalServerError})
@@ -64,7 +67,7 @@ func verifyJwtMiddleware(next http.Handler) http.Handler {
 			WriteJson(w, http.StatusUnauthorized, ApiLog{Err: "Token expired", StatusCode: http.StatusUnauthorized})
 			return
 		}
-		if token.Issuer() != cognito_issuer {
+		if token.Issuer() != util.Cognito_issuer {
 			log.Println("Auth failied due to Invalid issuer")
 			WriteJson(w, http.StatusUnauthorized, ApiLog{Err: "Invalid issuer", StatusCode: http.StatusUnauthorized})
 			return
@@ -97,16 +100,16 @@ func verifyJwtMiddleware(next http.Handler) http.Handler {
 }
 
 func validadeUserDb(cognitoId string) error {
-	db, err := NewPostgresStore(connStr)
+	db, err := repo.NewPostgresStore(util.ConnStr)
 	if err != nil {
 		log.Println("Error initializing database", err)
 		return err
 	}
-	defer db.db.Close()
+	defer db.DB.Close()
 
-	userStore := NewPostgresUserStore(db.db)
+	userStore := repo.NewPostgresUserStore(db.DB)
 
-	ok, _ = userStore.CheckUser(cognitoId)
+	ok, _ := userStore.CheckUser(cognitoId)
 	if !ok {
 		log.Println("User not found in the database, creating a new user")
 		userStore.CreateUser(cognitoId)
