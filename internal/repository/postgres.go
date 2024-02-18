@@ -39,7 +39,7 @@ const (
 	id SMALLINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 	name varchar(255) NOT NULL,
 	description text,
-	adminId SMALLINT NOT NULL REFERENCES Users(id),
+	adminId SMALLINT NOT NULL REFERENCES Users(id)
 );`
 )
 

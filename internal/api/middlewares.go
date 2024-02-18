@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	repo "github.com/Desgue/ttracker-api/internal/repository"
+	svc "github.com/Desgue/ttracker-api/internal/services"
 	"github.com/Desgue/ttracker-api/internal/util"
 
 	"github.com/lestrrat-go/jwx/jwk"
@@ -105,18 +107,27 @@ func verifyJwtMiddleware(next http.Handler) http.Handler {
 
 // VERIFY USER MIDDLEWARE
 // MUST BE CALLED AFTER JWT MIDDLEWARE
-func (c *UserController) verifyUserMiddleware(next http.Handler) http.Handler {
+// TODO PERFORM THE VERIFICATION AT THE CONTROLLER LEVEL TO AVOID OPENING A NEW CONNECTION TO THE DATABASE
+func verifyUserMiddleware(next http.Handler) http.Handler {
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		postgres, _ := repo.NewPostgresStore(util.ConnStr)
+		defer postgres.DB.Close()
+		repo := repo.NewPostgresUserStore(postgres.DB)
+		svc := svc.NewUserService(repo)
 		log.Println("Verifying user in the database")
 		cognitoId := r.Header.Get("CognitoId")
-		ok, _ := c.service.CheckUser(cognitoId)
+		ok, err := svc.CheckUser(cognitoId)
+		if err != nil {
+			log.Println("Error verifying user in the database: ", err)
+		}
 		if !ok {
 			log.Println("User not found in the database, creating a new user")
-			c.handleCreateUser(w, r)
+			svc.CreateUser(cognitoId)
 			log.Println("Serving next handler")
-			next.ServeHTTP(w, r)
+
 		}
-		log.Println("User verified successfully")
+		log.Println("User already exists in the database")
 		log.Println("Serving next handler")
 		next.ServeHTTP(w, r)
 	})

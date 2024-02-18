@@ -65,7 +65,7 @@ func (s *Server) Run() {
 
 	router.Use(loggingMiddleware)
 	router.Use(verifyJwtMiddleware)
-	router.Use(s.controller.User.verifyUserMiddleware)
+	router.Use(verifyUserMiddleware)
 
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"*"},
@@ -76,6 +76,10 @@ func (s *Server) Run() {
 	handler := c.Handler(router)
 
 	log.Println("Server running and listening on port: ", s.addr)
-	http.ListenAndServe(s.addr, handler)
+	err := http.ListenAndServe(s.addr, handler)
+	if err != nil {
+		log.Println("Error starting the server: ", err)
+	}
+	log.Println("shoud not reach here, server stopped running...")
 
 }
