@@ -34,6 +34,13 @@ const (
 	cognitoId varchar(255) NOT NULL,
 	createdAt TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );`
+	createTeamTableQuery = `
+	CREATE TABLE IF NOT EXISTS Teams (
+	id SMALLINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	name varchar(255) NOT NULL,
+	description text,
+	adminId SMALLINT NOT NULL REFERENCES Users(id),
+);`
 )
 
 type PostgresStore struct {
@@ -69,7 +76,13 @@ func (store *PostgresStore) createEnums() {
 }
 
 func (store *PostgresStore) createTables() {
-	_, err := store.DB.Exec(createUserTableQuery)
+	var err error
+
+	_, err = store.DB.Exec(createTeamTableQuery)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	_, err = store.DB.Exec(createUserTableQuery)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -81,6 +94,7 @@ func (store *PostgresStore) createTables() {
 	if err != nil {
 		log.Fatalln(err)
 	}
+
 }
 
 func NewPostgresStore(connStr string) (*PostgresStore, error) {

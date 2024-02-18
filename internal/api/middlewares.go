@@ -127,17 +127,20 @@ func getPublicKey(url string) (jwk.Set, error) {
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Do stuff here
+		log.Println("Logging the request")
 		uri := r.RequestURI
 		method := r.Method
 		referrer := r.Referer()
 		userAgent := r.UserAgent()
 
-		log.Printf(` %s -> %s 
+		log.Printf(` 
+		%s -> %s 
 		Referrer: %s 
 		User-Agent: %s`,
 			method, uri, referrer, userAgent)
 
 		// Call the next handler, which can be another middleware in the chain, or the final handler.
+		log.Println("Serving next handler")
 		next.ServeHTTP(w, r)
 	})
 }

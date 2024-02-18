@@ -7,26 +7,35 @@ var (
 	ErrInvalidTeamAdmin = errors.New("invalid team admin")
 )
 
+type TeamStorage interface {
+	GetTeam(id int) (Team, error)
+	CreateTeam(*CreateTeamRequest) error
+}
+
+type ITeamService interface {
+	GetTeam(id int) (Team, error)
+	CreateTeam(*CreateTeamRequest) error
+}
+
 type Team struct {
 	Id          int    `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
-	Admin       User   `json:"admin"`
+	AdminId     int    `json:"adminId"`
 }
 
 type CreateTeamRequest struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
-	Admin       User   `json:"admin"`
+	AdminId     int    `json:"adminId"`
 }
 
-func (t *Team) Validate() error {
+func (t *CreateTeamRequest) Validate() error {
 	if t.Name == "" {
 		return ErrInvalidTeamName
 	}
-	if t.Admin.Id == 0 {
+	if t.AdminId == 0 {
 		return ErrInvalidTeamAdmin
 	}
-
 	return nil
 }
