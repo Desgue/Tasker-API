@@ -8,12 +8,34 @@ import (
 	"strings"
 	"time"
 
-	repo "github.com/Desgue/ttracker-api/internal/repository"
 	"github.com/Desgue/ttracker-api/internal/util"
 
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/lestrrat-go/jwx/jwt"
 )
+
+// LOGGING MIDDLEWARE
+
+func loggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Do stuff here
+		log.Println("Logging the request")
+		uri := r.RequestURI
+		method := r.Method
+		referrer := r.Referer()
+		userAgent := r.UserAgent()
+
+		log.Printf(` 
+		%s -> %s 
+		Referrer: %s 
+		User-Agent: %s`,
+			method, uri, referrer, userAgent)
+
+		// Call the next handler, which can be another middleware in the chain, or the final handler.
+		log.Println("Serving next handler")
+		next.ServeHTTP(w, r)
+	})
+}
 
 // JWT MIDDLEWARE
 
@@ -75,43 +97,32 @@ func verifyJwtMiddleware(next http.Handler) http.Handler {
 
 		// Check if user is present on the database, if not create a new user
 		cognitoId := token.Subject()
-		if err := validadeUserDb(cognitoId); err != nil {
-			log.Println("Error validating user in the database: ", err)
-			WriteJson(
-				w,
-				http.StatusInternalServerError,
-				ApiLog{Err: fmt.Sprintf("Error validating user in the database with err msg: %s",
-					err.Error()),
-					StatusCode: http.StatusInternalServerError,
-				})
-			return
+		setUserHeader(r, cognitoId)
+		log.Println("Serving next handler")
+		next.ServeHTTP(w, r)
+	})
+}
+
+// VERIFY USER MIDDLEWARE
+// MUST BE CALLED AFTER JWT MIDDLEWARE
+func (c *UserController) verifyUserMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Println("Verifying user in the database")
+		cognitoId := r.Header.Get("CognitoId")
+		ok, _ := c.service.CheckUser(cognitoId)
+		if !ok {
+			log.Println("User not found in the database, creating a new user")
+			c.handleCreateUser(w, r)
+			log.Println("Serving next handler")
+			next.ServeHTTP(w, r)
 		}
-		log.Println("Setting header with cognito Id")
-		r.Header.Set("CognitoId", cognitoId)
+		log.Println("User verified successfully")
 		log.Println("Serving next handler")
 		next.ServeHTTP(w, r)
 	})
 }
 
 // HELPER FUNCTIONS FOR JWT MIDDLEWARE
-
-func validadeUserDb(cognitoId string) error {
-	db, err := repo.NewPostgresStore(util.ConnStr)
-	if err != nil {
-		log.Println("Error initializing database", err)
-		return err
-	}
-	defer db.DB.Close()
-
-	userStore := repo.NewPostgresUserStore(db.DB)
-
-	ok, _ := userStore.CheckUser(cognitoId)
-	if !ok {
-		log.Println("User not found in the database, creating a new user")
-		userStore.CreateUser(cognitoId)
-	}
-	return nil
-}
 
 func getPublicKey(url string) (jwk.Set, error) {
 	set, err := jwk.Fetch(context.Background(), url)
@@ -122,25 +133,7 @@ func getPublicKey(url string) (jwk.Set, error) {
 	return set, nil
 }
 
-// LOGGING MIDDLEWARE
-
-func loggingMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Do stuff here
-		log.Println("Logging the request")
-		uri := r.RequestURI
-		method := r.Method
-		referrer := r.Referer()
-		userAgent := r.UserAgent()
-
-		log.Printf(` 
-		%s -> %s 
-		Referrer: %s 
-		User-Agent: %s`,
-			method, uri, referrer, userAgent)
-
-		// Call the next handler, which can be another middleware in the chain, or the final handler.
-		log.Println("Serving next handler")
-		next.ServeHTTP(w, r)
-	})
+func setUserHeader(r *http.Request, cognitoId string) {
+	log.Println("Setting header with cognito Id")
+	r.Header.Set("CognitoId", cognitoId)
 }

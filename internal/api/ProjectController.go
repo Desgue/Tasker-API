@@ -22,28 +22,28 @@ func NewProjectController(service domain.IProjectService) *ProjectController {
 
 // Handler for calls to /projects
 
-func (s *ProjectController) handleProjects(w http.ResponseWriter, r *http.Request) error {
+func (c *ProjectController) handleProjects(w http.ResponseWriter, r *http.Request) error {
 	switch r.Method {
 	case "GET":
-		return s.handleGetProjects(w, r)
+		return c.handleGetProjects(w, r)
 	case "POST":
-		return s.handleCreateProject(w, r)
+		return c.handleCreateProject(w, r)
 	default:
 		return WriteJson(w, http.StatusBadRequest, ApiLog{Err: "Method not allowed on /projects"})
 	}
 
 }
-func (s *ProjectController) handleGetProjects(w http.ResponseWriter, r *http.Request) error {
+func (c *ProjectController) handleGetProjects(w http.ResponseWriter, r *http.Request) error {
 
 	cognitoId := r.Header.Get("CognitoId")
-	projects, err := s.service.GetProjects(cognitoId)
+	projects, err := c.service.GetProjects(cognitoId)
 	if err != nil {
 		log.Println("Err fetching projects: ", err)
 		return WriteJson(w, http.StatusBadRequest, ApiLog{Err: err.Error(), StatusCode: http.StatusBadRequest})
 	}
 	return WriteJson(w, http.StatusOK, projects)
 }
-func (s *ProjectController) handleCreateProject(w http.ResponseWriter, r *http.Request) error {
+func (c *ProjectController) handleCreateProject(w http.ResponseWriter, r *http.Request) error {
 
 	createProjectReq := new(domain.CreateProjectRequest)
 	if err := json.NewDecoder(r.Body).Decode(createProjectReq); err != nil {
@@ -51,7 +51,7 @@ func (s *ProjectController) handleCreateProject(w http.ResponseWriter, r *http.R
 		return err
 	}
 	createProjectReq.UserCognitoId = r.Header.Get("CognitoId")
-	if err := s.service.CreateProject(createProjectReq); err != nil {
+	if err := c.service.CreateProject(createProjectReq); err != nil {
 		log.Println("Error creating project: ", err)
 		return WriteJson(w, http.StatusBadRequest, ApiLog{Err: err.Error(), StatusCode: http.StatusBadRequest})
 	}
@@ -60,25 +60,25 @@ func (s *ProjectController) handleCreateProject(w http.ResponseWriter, r *http.R
 
 // Handler for calls to /projects/{projectId}
 
-func (s *ProjectController) handleProject(w http.ResponseWriter, r *http.Request) error {
+func (c *ProjectController) handleProject(w http.ResponseWriter, r *http.Request) error {
 	switch r.Method {
 	case "GET":
-		return s.handleGetProjectById(w, r)
+		return c.handleGetProjectById(w, r)
 	case
 		"PUT":
-		return s.handleUpdateProject(w, r)
+		return c.handleUpdateProject(w, r)
 	case "DELETE":
-		return s.handleDeleteProject(w, r)
+		return c.handleDeleteProject(w, r)
 	default:
 		return WriteJson(w, http.StatusBadRequest, ApiLog{Err: "Method not allowed on /projects/{id}"})
 	}
 }
 
-func (s *ProjectController) handleGetProjectById(w http.ResponseWriter, r *http.Request) error {
+func (c *ProjectController) handleGetProjectById(w http.ResponseWriter, r *http.Request) error {
 	projectId := mux.Vars(r)["projectId"]
 	cognitoId := r.Header.Get("CognitoId")
 
-	project, err := s.service.GetProjectById(projectId, cognitoId)
+	project, err := c.service.GetProjectById(projectId, cognitoId)
 	if err != nil {
 		log.Println("Err fetching project: ", err)
 		return WriteJson(w, http.StatusBadRequest, ApiLog{Err: err.Error(), StatusCode: http.StatusBadRequest})
@@ -86,7 +86,7 @@ func (s *ProjectController) handleGetProjectById(w http.ResponseWriter, r *http.
 	return WriteJson(w, http.StatusOK, &project)
 }
 
-func (s *ProjectController) handleUpdateProject(w http.ResponseWriter, r *http.Request) error {
+func (c *ProjectController) handleUpdateProject(w http.ResponseWriter, r *http.Request) error {
 	projectId := mux.Vars(r)["projectId"]
 	cognitoId := r.Header.Get("CognitoId")
 
@@ -96,7 +96,7 @@ func (s *ProjectController) handleUpdateProject(w http.ResponseWriter, r *http.R
 	}
 	project.UserCognitoId = cognitoId
 
-	if err := s.service.UpdateProject(projectId, project); err != nil {
+	if err := c.service.UpdateProject(projectId, project); err != nil {
 		log.Println("Err updating project: ", err)
 		return WriteJson(w, http.StatusBadRequest, ApiLog{Err: err.Error(), StatusCode: http.StatusBadRequest})
 	}
@@ -104,11 +104,11 @@ func (s *ProjectController) handleUpdateProject(w http.ResponseWriter, r *http.R
 	return WriteJson(w, http.StatusOK, ApiLog{StatusCode: http.StatusOK, Msg: fmt.Sprintf("Project with id %s updated successfully", projectId)})
 }
 
-func (s *ProjectController) handleDeleteProject(w http.ResponseWriter, r *http.Request) error {
+func (c *ProjectController) handleDeleteProject(w http.ResponseWriter, r *http.Request) error {
 	projectId := mux.Vars(r)["projectId"]
 	cognitoId := r.Header.Get("CognitoId")
 
-	err := s.service.DeleteProject(projectId, cognitoId)
+	err := c.service.DeleteProject(projectId, cognitoId)
 	if err != nil {
 		log.Println("Err deleting project: ", err)
 		return WriteJson(w, http.StatusBadRequest, ApiLog{Err: err.Error(), StatusCode: http.StatusBadRequest})

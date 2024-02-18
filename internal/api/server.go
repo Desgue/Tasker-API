@@ -26,6 +26,8 @@ func NewServer(addr string, controllers *Controllers) *Server {
 type Controllers struct {
 	Project *ProjectController
 	Task    *TaskController
+	Team    *TeamController
+	User    *UserController
 }
 type ApiLog struct {
 	Err        string `json:"err"`
@@ -49,14 +51,22 @@ func makeHttpHandler(f apiFunc) http.HandlerFunc {
 }
 func (s *Server) Run() {
 	router := mux.NewRouter()
+
 	router.HandleFunc("/projects/{projectId}/tasks", makeHttpHandler(s.controller.Task.handleTasks))
 	router.HandleFunc("/projects/{projectId}/tasks/{taskId}", makeHttpHandler(s.controller.Task.handleTask))
 
 	router.HandleFunc("/projects", makeHttpHandler(s.controller.Project.handleProjects))
 	router.HandleFunc("/projects/{projectId}", makeHttpHandler(s.controller.Project.handleProject))
 
+	router.HandleFunc("/teams", makeHttpHandler(s.controller.Team.handleTeams))
+	router.HandleFunc("/teams/{teamId}", makeHttpHandler(s.controller.Team.handleTeam))
+
+	router.HandleFunc("/users", makeHttpHandler(s.controller.User.handleUsers))
+
 	router.Use(loggingMiddleware)
 	router.Use(verifyJwtMiddleware)
+	router.Use(s.controller.User.verifyUserMiddleware)
+
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"*"},
 		AllowCredentials: true,

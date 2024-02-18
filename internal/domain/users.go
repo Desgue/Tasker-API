@@ -8,6 +8,7 @@ type UserStorage interface {
 }
 
 type IUserService interface {
+	CheckUser(string) (bool, error)
 	CreateUser(string) error
 }
 

@@ -20,3 +20,11 @@ func (s *UserService) CreateUser(cognitoId string) error {
 	}
 	return nil
 }
+
+func (s *UserService) CheckUser(cognitoId string) (bool, error) {
+	exists, err := s.store.CheckUser(cognitoId)
+	if err != nil {
+		return false, err
+	}
+	return exists, nil
+}
